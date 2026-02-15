@@ -1,0 +1,63 @@
+server:
+  port: 9101
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: anypoint-mq-prometheus-exporter
+  main:
+    lazy-initialization: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+anypoint:
+  baseUrl: https://anypoint.mulesoft.com
+  auth:
+    # Option 1: Username/password authentication
+    username: ${ANYPOINT_USERNAME:}
+    password: ${ANYPOINT_PASSWORD:}
+    # Option 2: Connected App authentication (preferred)
+    clientId: ${ANYPOINT_CLIENT_ID:}
+    clientSecret: ${ANYPOINT_CLIENT_SECRET:}
+  organizationId: ${ANYPOINT_ORG_ID:}
+  environments:
+    - id: ${ANYPOINT_ENV_ID:}
+      name: ${ANYPOINT_ENV_NAME:Production}
+  regions:
+    - us-east-1
+  scrape:
+    intervalSeconds: 60
+    periodSeconds: 600
+    enabled: true
+  http:
+    connectTimeoutSeconds: 30
+    readTimeoutSeconds: 60
+    maxRetries: 3
+
+logging:
+  level:
+    com.netflexity.amq.exporter: DEBUG
+    org.springframework.web.reactive: INFO
+    org.springframework.security: INFO
+    io.micrometer: INFO
+  pattern:
+    console: '%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'

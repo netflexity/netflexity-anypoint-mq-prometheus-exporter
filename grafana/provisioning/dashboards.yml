@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: 'Anypoint MQ Dashboards'
+    orgId: 1
+    folder: 'Anypoint MQ'
+    folderUid: anypoint-mq
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
