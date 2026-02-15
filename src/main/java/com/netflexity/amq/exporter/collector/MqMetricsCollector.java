@@ -44,6 +44,9 @@ public class MqMetricsCollector {
     private final ConcurrentHashMap<String, AtomicLong> queueMetrics = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicLong> exchangeMetrics = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, QueueInfo> queueInfoMetrics = new ConcurrentHashMap<>();
+    
+    // Current queue stats for monitor integration
+    private final ConcurrentHashMap<String, QueueStats> currentQueueStats = new ConcurrentHashMap<>();
 
     public MqMetricsCollector(AnypointMqClient mqClient, 
                               AnypointConfig anypointConfig, 
@@ -202,6 +205,10 @@ public class MqMetricsCollector {
         String queueName = stats.getQueue().getSanitizedQueueName();
         String region = stats.getQueue().getRegion();
         
+        // Store current queue stats for monitor integration
+        String statsKey = String.format("%s_%s_%s", queueName, environmentName, region);
+        currentQueueStats.put(statsKey, stats);
+        
         // Register or update gauge metrics
         updateGaugeMetric("anypoint_mq_queue_messages_in_flight", 
                 stats.getMessagesInFlight() != null ? stats.getMessagesInFlight() : 0L,
@@ -322,6 +329,13 @@ public class MqMetricsCollector {
             case "anypoint_mq_exchange_messages_delivered_total" -> "Total messages delivered from exchange";
             default -> "Anypoint MQ metric";
         };
+    }
+
+    /**
+     * Get current queue stats (for monitor integration)
+     */
+    public Map<String, QueueStats> getCurrentQueueStats() {
+        return Map.copyOf(currentQueueStats);
     }
 
     /**

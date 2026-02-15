@@ -150,6 +150,290 @@ anypoint:
 | `anypoint_mq_scrape_errors_total` | Counter | Total scrape errors | cause |
 | `anypoint_mq_last_scrape_timestamp_seconds` | Gauge | Unix timestamp of last scrape | - |
 
+## Advanced Monitors (PRO License Required)
+
+The exporter includes an advanced monitoring system with intelligent alerting, health scoring, and notifications. This feature requires a PRO license.
+
+### Features
+
+- **Smart Monitors**: Queue depth thresholds, DLQ alerts, throughput anomalies, health scoring
+- **Multi-Channel Notifications**: Slack, PagerDuty, email, Microsoft Teams, custom webhooks
+- **Cooldown & Deduplication**: Prevent alert spam with intelligent cooldown periods
+- **REST API**: Programmatic access to monitor status and health scores
+- **Trend Analysis**: Baseline learning and percentage change detection
+
+### License Tiers
+
+| Feature | Free | PRO |
+|---------|------|-----|
+| Raw Metrics Collection | ✅ | ✅ |
+| Prometheus Integration | ✅ | ✅ |
+| Grafana Dashboard | ✅ | ✅ |
+| Advanced Monitors | ❌ | ✅ |
+| Alerting & Notifications | ❌ | ✅ |
+| Queue Health Scores | ❌ | ✅ |
+| REST API | ❌ | ✅ |
+| Trend Analysis | ❌ | ✅ |
+
+### Configuration
+
+Enable advanced monitors in `application.yml`:
+
+```yaml
+anypoint:
+  # PRO License key (contact sales@netflexity.com)
+  license:
+    key: ${ANYPOINT_LICENSE_KEY}
+
+  # Enable advanced monitoring
+  monitors:
+    enabled: true
+    evaluationIntervalSeconds: 60
+    defaults:
+      cooldownMinutes: 15
+      evaluationWindowMinutes: 5
+    
+    # Monitor definitions
+    definitions:
+      - name: high-queue-depth
+        description: "Alert when queue depth exceeds threshold"
+        type: QUEUE_DEPTH
+        target: "*"  # All queues (supports wildcards like "order-*")
+        condition: GT
+        threshold: 1000
+        severity: WARNING
+        notifications: [slack-ops]
+      
+      - name: dlq-alert
+        description: "Alert on any messages in DLQ"
+        type: DLQ_ALERT
+        target: "*"
+        threshold: 0
+        condition: GT
+        severity: CRITICAL
+        notifications: [slack-ops, pagerduty]
+      
+      - name: throughput-drop
+        description: "Alert on significant throughput decrease"
+        type: THROUGHPUT_DROP
+        target: "*"
+        condition: PCT_CHANGE
+        threshold: -50  # 50% drop
+        evaluationWindowMinutes: 30
+        severity: WARNING
+        notifications: [slack-ops]
+      
+      - name: queue-health
+        description: "Alert on poor queue health score"
+        type: QUEUE_HEALTH
+        target: "*"
+        condition: LT
+        threshold: 50  # Health score below 50%
+        severity: WARNING
+        notifications: [slack-ops]
+    
+    # Notification channels
+    notifications:
+      channels:
+        - name: slack-ops
+          type: slack
+          enabled: true
+          webhookUrl: ${SLACK_WEBHOOK_URL}
+        
+        - name: pagerduty
+          type: pagerduty
+          enabled: true
+          routingKey: ${PAGERDUTY_ROUTING_KEY}
+        
+        - name: email-ops
+          type: email
+          enabled: true
+          to: ${ALERT_EMAIL_TO}
+          from: ${ALERT_EMAIL_FROM:noreply@netflexity.com}
+        
+        - name: teams-ops
+          type: teams
+          enabled: true
+          webhookUrl: ${TEAMS_WEBHOOK_URL}
+        
+        - name: custom-webhook
+          type: webhook
+          enabled: true
+          url: ${WEBHOOK_URL}
+          headers:
+            Authorization: "Bearer ${WEBHOOK_TOKEN}"
+
+# Mail configuration (for email notifications)
+spring.mail:
+  host: ${MAIL_HOST:localhost}
+  port: ${MAIL_PORT:587}
+  username: ${MAIL_USERNAME}
+  password: ${MAIL_PASSWORD}
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+```
+
+### Monitor Types
+
+#### QUEUE_DEPTH
+Monitors current queue depth against a threshold.
+
+**Example**: Alert when any queue has more than 1000 messages
+```yaml
+- name: high-depth-alert
+  type: QUEUE_DEPTH
+  target: "*"
+  condition: GT
+  threshold: 1000
+  severity: WARNING
+```
+
+#### DLQ_ALERT
+Monitors dead letter queues for any messages.
+
+**Example**: Critical alert on any DLQ messages
+```yaml
+- name: dlq-monitor
+  type: DLQ_ALERT
+  target: "*"
+  threshold: 0
+  condition: GT
+  severity: CRITICAL
+```
+
+#### THROUGHPUT_DROP/THROUGHPUT_SPIKE
+Monitors percentage changes in message throughput.
+
+**Example**: Alert on 50% throughput drop over 30 minutes
+```yaml
+- name: throughput-drop
+  type: THROUGHPUT_DROP
+  target: "order-*"
+  condition: PCT_CHANGE
+  threshold: -50
+  evaluationWindowMinutes: 30
+  severity: WARNING
+```
+
+#### QUEUE_HEALTH
+Monitors composite health score (0-100) based on:
+- Queue depth ratio
+- DLQ presence
+- Consumer lag (in-flight vs received ratio)
+- Throughput stability
+
+**Example**: Alert when health score drops below 50
+```yaml
+- name: poor-health
+  type: QUEUE_HEALTH
+  target: "*"
+  condition: LT
+  threshold: 50
+  severity: WARNING
+```
+
+### Notification Channels
+
+#### Slack
+```yaml
+- name: slack-alerts
+  type: slack
+  webhookUrl: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+#### PagerDuty
+```yaml
+- name: pagerduty-critical
+  type: pagerduty
+  routingKey: R00000000000000000000000000000
+```
+
+#### Email (SMTP)
+```yaml
+- name: email-alerts
+  type: email
+  to: ops@company.com
+  from: monitoring@company.com
+```
+
+#### Microsoft Teams
+```yaml
+- name: teams-alerts
+  type: teams
+  webhookUrl: https://outlook.office.com/webhook/...
+```
+
+#### Custom Webhook
+```yaml
+- name: custom-api
+  type: webhook
+  url: https://api.company.com/alerts
+  headers:
+    Authorization: "Bearer token123"
+    X-Source: "anypoint-mq-monitor"
+```
+
+### REST API
+
+Access monitor status and health scores via REST API:
+
+```bash
+# License information
+curl http://localhost:9101/api/license
+
+# All monitors status
+curl http://localhost:9101/api/monitors
+
+# Specific monitor
+curl http://localhost:9101/api/monitors/high-queue-depth
+
+# Queue health scores
+curl http://localhost:9101/api/health-scores
+
+# Specific queue health
+curl http://localhost:9101/api/health-scores/order-processing-queue
+
+# Test monitor notification
+curl -X POST http://localhost:9101/api/monitors/high-queue-depth/test
+```
+
+### Advanced Metrics
+
+Additional Prometheus metrics for monitoring:
+
+| Metric | Type | Description | Labels |
+|--------|------|-------------|--------|
+| `anypoint_mq_monitor_triggered` | Gauge | Monitor trigger status (1=triggered, 0=OK) | monitor_name, queue_name, environment, region, severity |
+| `anypoint_mq_monitor_evaluations_total` | Counter | Total monitor evaluations | monitor_name, result |
+| `anypoint_mq_monitor_notifications_total` | Counter | Notifications sent | monitor_name, channel, status |
+| `anypoint_mq_monitor_notifications_failed_total` | Counter | Failed notifications | monitor_name, channel, error |
+| `anypoint_mq_queue_health_score` | Gauge | Queue health score (0-100) | queue_name, environment, region |
+| `anypoint_mq_monitor_last_triggered_timestamp` | Gauge | Last trigger timestamp | monitor_name |
+
+### Health Score Calculation
+
+Queue health scores (0-100) are calculated based on:
+
+1. **Queue Depth Penalty** (0-20 points): Logarithmic penalty for high queue depth
+2. **DLQ Penalty** (0-30 points): Major penalty for messages in dead letter queues
+3. **Consumer Lag Penalty** (0-25 points): Penalty for high in-flight to received ratio
+4. **Throughput Stability Penalty** (0-15 points): Penalty for high variance in throughput
+
+**Scoring**:
+- **90-100**: Excellent - Queue operating optimally
+- **70-89**: Good - Minor issues, monitor closely
+- **50-69**: Fair - Performance degradation detected
+- **30-49**: Poor - Significant issues, action needed
+- **0-29**: Critical - Queue health severely compromised
+
+### Getting a PRO License
+
+Advanced monitoring features require a PRO license. Contact **sales@netflexity.com** for pricing and licensing.
+
 ## Grafana Dashboard
 
 The included Grafana dashboard provides:

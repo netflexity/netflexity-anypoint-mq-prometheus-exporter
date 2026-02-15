@@ -52,6 +52,86 @@ anypoint:
     readTimeoutSeconds: 60
     maxRetries: 3
 
+  # Licensing (for advanced features)
+  license:
+    key: ${ANYPOINT_LICENSE_KEY:}
+
+  # Advanced Monitors (PRO license required)
+  monitors:
+    enabled: ${ANYPOINT_MONITORS_ENABLED:false}
+    evaluationIntervalSeconds: 60
+    defaults:
+      cooldownMinutes: 15
+      evaluationWindowMinutes: 5
+    definitions:
+      - name: high-queue-depth
+        type: QUEUE_DEPTH
+        target: "*"
+        condition: GT
+        threshold: 1000
+        severity: WARNING
+        notifications: [slack-ops]
+      - name: dlq-alert
+        type: DLQ_ALERT
+        target: "*"
+        threshold: 0
+        condition: GT
+        severity: CRITICAL
+        notifications: [slack-ops, pagerduty]
+      - name: throughput-drop
+        type: THROUGHPUT_DROP
+        target: "*"
+        condition: PCT_CHANGE
+        threshold: -50
+        evaluationWindowMinutes: 30
+        severity: WARNING
+        notifications: [slack-ops]
+      - name: queue-health
+        type: QUEUE_HEALTH
+        target: "*"
+        condition: LT
+        threshold: 50
+        severity: WARNING
+        notifications: [slack-ops]
+    notifications:
+      channels:
+        - name: slack-ops
+          type: slack
+          enabled: ${SLACK_ENABLED:false}
+          webhookUrl: ${SLACK_WEBHOOK_URL:}
+        - name: pagerduty
+          type: pagerduty
+          enabled: ${PAGERDUTY_ENABLED:false}
+          routingKey: ${PAGERDUTY_ROUTING_KEY:}
+        - name: email-ops
+          type: email
+          enabled: ${EMAIL_ENABLED:false}
+          to: ${ALERT_EMAIL_TO:}
+          from: ${ALERT_EMAIL_FROM:noreply@netflexity.com}
+        - name: teams-ops
+          type: teams
+          enabled: ${TEAMS_ENABLED:false}
+          webhookUrl: ${TEAMS_WEBHOOK_URL:}
+        - name: custom-webhook
+          type: webhook
+          enabled: ${WEBHOOK_ENABLED:false}
+          url: ${WEBHOOK_URL:}
+          headers:
+            Authorization: "Bearer ${WEBHOOK_TOKEN:}"
+
+# Mail configuration (for email notifications)
+spring.mail:
+  host: ${MAIL_HOST:localhost}
+  port: ${MAIL_PORT:587}
+  username: ${MAIL_USERNAME:}
+  password: ${MAIL_PASSWORD:}
+  properties:
+    mail:
+      smtp:
+        auth: true
+        starttls:
+          enable: true
+
 logging:
   level:
     com.netflexity.amq.exporter: DEBUG
