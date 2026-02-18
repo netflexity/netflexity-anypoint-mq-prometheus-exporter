@@ -29,25 +29,16 @@ public class NotificationDispatcher {
 
     private final MonitorConfig monitorConfig;
     private final Map<String, NotificationChannel> channels;
-    private final Counter notificationsSentCounter;
-    private final Counter notificationsFailedCounter;
+    private final MeterRegistry meterRegistry;
 
     public NotificationDispatcher(MonitorConfig monitorConfig, List<NotificationChannel> channelList, MeterRegistry meterRegistry) {
         this.monitorConfig = monitorConfig;
+        this.meterRegistry = meterRegistry;
         // Build channel map by name
         this.channels = new ConcurrentHashMap<>();
         if (channelList != null) {
             channelList.forEach(channel -> channels.put(channel.getName(), channel));
         }
-
-        // Initialize metrics
-        this.notificationsSentCounter = Counter.builder("anypoint_mq_monitor_notifications_total")
-                .description("Total number of notifications sent")
-                .register(meterRegistry);
-
-        this.notificationsFailedCounter = Counter.builder("anypoint_mq_monitor_notifications_failed_total")
-                .description("Total number of failed notifications")
-                .register(meterRegistry);
 
         log.info("NotificationDispatcher initialized with {} channels: {}", 
                 channels.size(), channels.keySet());
@@ -95,12 +86,13 @@ public class NotificationDispatcher {
                 channel.send(alert);
                 successCount++;
                 
-                notificationsSentCounter.increment(
-                    "monitor_name", result.getMonitorName(),
-                    "channel", channelName,
-                    "channel_type", channel.getType(),
-                    "status", "success"
-                );
+                Counter.builder("anypoint_mq_monitor_notifications_total")
+                    .tag("monitor_name", result.getMonitorName())
+                    .tag("channel", channelName)
+                    .tag("channel_type", channel.getType())
+                    .tag("status", "success")
+                    .register(meterRegistry)
+                    .increment();
                 
                 log.debug("Successfully sent notification for monitor '{}' via channel '{}'", 
                     result.getMonitorName(), channelName);
@@ -108,12 +100,13 @@ public class NotificationDispatcher {
             } catch (Exception e) {
                 failureCount++;
                 
-                notificationsFailedCounter.increment(
-                    "monitor_name", result.getMonitorName(),
-                    "channel", channelName,
-                    "channel_type", channel.getType(),
-                    "error", e.getClass().getSimpleName()
-                );
+                Counter.builder("anypoint_mq_monitor_notifications_failed_total")
+                    .tag("monitor_name", result.getMonitorName())
+                    .tag("channel", channelName)
+                    .tag("channel_type", channel.getType())
+                    .tag("error", e.getClass().getSimpleName())
+                    .register(meterRegistry)
+                    .increment();
                 
                 log.error("Failed to send notification for monitor '{}' via channel '{}': {}", 
                     result.getMonitorName(), channelName, e.getMessage(), e);

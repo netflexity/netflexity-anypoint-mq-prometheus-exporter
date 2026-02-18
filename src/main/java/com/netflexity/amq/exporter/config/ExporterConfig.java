@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import io.netty.channel.ChannelOption;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -47,7 +48,7 @@ public class ExporterConfig {
 
         // Create HTTP client with timeouts and connection provider
         HttpClient httpClient = HttpClient.create(connectionProvider)
-                .connectTimeout(Duration.ofSeconds(anypointConfig.getHttp().getConnectTimeoutSeconds()))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) (anypointConfig.getHttp().getConnectTimeoutSeconds() * 1000))
                 .responseTimeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()));
 
         return WebClient.builder()
@@ -69,11 +70,13 @@ public class ExporterConfig {
      * Holder class for custom metrics used by the exporter
      */
     public static class ExporterMetrics {
+        private final MeterRegistry meterRegistry;
         private final Timer scrapeTimer;
         private final Counter scrapeErrorCounter;
         private final AtomicLong lastScrapeTimestamp = new AtomicLong(0);
 
         public ExporterMetrics(MeterRegistry meterRegistry) {
+            this.meterRegistry = meterRegistry;
             this.scrapeTimer = Timer.builder("anypoint_mq_scrape_duration_seconds")
                     .description("Time spent scraping Anypoint MQ metrics")
                     .register(meterRegistry);
@@ -83,9 +86,9 @@ public class ExporterConfig {
                     .register(meterRegistry);
 
             // Register gauge for last scrape timestamp
-            Gauge.builder("anypoint_mq_last_scrape_timestamp_seconds")
+            Gauge.builder("anypoint_mq_last_scrape_timestamp_seconds", lastScrapeTimestamp, AtomicLong::doubleValue)
                     .description("Unix timestamp of the last successful scrape")
-                    .register(meterRegistry, this, metrics -> metrics.lastScrapeTimestamp.get());
+                    .register(meterRegistry);
 
             log.info("Custom metrics registered: scrape_duration_seconds, scrape_errors_total, last_scrape_timestamp_seconds");
         }
@@ -106,7 +109,7 @@ public class ExporterConfig {
         public void incrementErrorCounter(String cause) {
             Counter.builder("anypoint_mq_scrape_errors_total")
                     .tag("cause", cause)
-                    .register(scrapeTimer.getId().getMeterRegistry())
+                    .register(meterRegistry)
                     .increment();
         }
     }

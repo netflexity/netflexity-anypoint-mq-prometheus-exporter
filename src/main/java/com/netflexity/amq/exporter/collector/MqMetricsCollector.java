@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -79,7 +80,7 @@ public class MqMetricsCollector {
      * Scheduled metrics collection
      * Uses fixedDelayString to read interval from configuration
      */
-    @Scheduled(fixedDelayString = "${anypoint.scrape.intervalSeconds:60}000")
+    @Scheduled(fixedDelayString = "${anypoint.scrape.intervalSeconds:60}000", initialDelayString = "${anypoint.scrape.intervalSeconds:60}000")
     public void scheduledCollection() {
         if (!anypointConfig.getScrape().isEnabled()) {
             return;
@@ -259,7 +260,7 @@ public class MqMetricsCollector {
         queueInfoMetrics.put(key, info);
         
         // Register gauge for queue info
-        Gauge.builder("anypoint_mq_queue_info")
+        Gauge.builder("anypoint_mq_queue_info", info, queueInfo -> 1.0)
                 .description("Queue metadata information")
                 .tag("queue_name", info.queueName)
                 .tag("environment", info.environment)
@@ -268,7 +269,7 @@ public class MqMetricsCollector {
                 .tag("is_fifo", String.valueOf(info.isFifo))
                 .tag("max_deliveries", String.valueOf(info.maxDeliveries))
                 .tag("ttl", String.valueOf(info.ttl))
-                .register(meterRegistry, info, queueInfo -> 1.0);
+                .register(meterRegistry);
     }
 
     /**
@@ -300,7 +301,7 @@ public class MqMetricsCollector {
             AtomicLong atomicValue = new AtomicLong(value);
             
             // Build gauge with tags
-            Gauge.Builder builder = Gauge.builder(metricName)
+            Gauge.Builder<AtomicLong> builder = Gauge.builder(metricName, atomicValue, AtomicLong::get)
                     .description(getMetricDescription(metricName));
                     
             for (int i = 0; i < tags.length; i += 2) {
@@ -309,7 +310,7 @@ public class MqMetricsCollector {
                 }
             }
             
-            builder.register(meterRegistry, atomicValue, AtomicLong::get);
+            builder.register(meterRegistry);
             return atomicValue;
         }).set(value);
     }

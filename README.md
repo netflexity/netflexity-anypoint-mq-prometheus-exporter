@@ -342,7 +342,7 @@ Monitors composite health score (0-100) based on:
 ```yaml
 - name: slack-alerts
   type: slack
-  webhookUrl: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+  webhookUrl: "${SLACK_WEBHOOK_URL}"
 ```
 
 #### PagerDuty

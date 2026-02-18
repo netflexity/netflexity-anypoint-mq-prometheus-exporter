@@ -8,6 +8,7 @@ import com.netflexity.amq.exporter.model.QueueStats;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -36,7 +37,9 @@ public class AnypointMqClient {
     private final AnypointConfig anypointConfig;
     private final AnypointAuthClient authClient;
 
-    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+    // Anypoint MQ Stats API requires millisecond precision (e.g., 2025-01-01T00:00:00.000Z)
+    private static final DateTimeFormatter ISO_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            .withZone(java.time.ZoneOffset.UTC);
 
     public AnypointMqClient(WebClient webClient, AnypointConfig anypointConfig, AnypointAuthClient authClient) {
         this.webClient = webClient;
@@ -56,7 +59,7 @@ public class AnypointMqClient {
     public Flux<Queue> listQueues(String environmentId, String region) {
         log.debug("Listing queues for environment {} in region {}", environmentId, region);
         
-        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations?type=queue",
+        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations",
                 anypointConfig.getBaseUrl(),
                 anypointConfig.getOrganizationId(),
                 environmentId,
@@ -67,9 +70,10 @@ public class AnypointMqClient {
                         .uri(url)
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
-                        .onStatus(HttpStatus::isError, response -> handleApiError(response, "list queues"))
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "list queues"))
                         .bodyToMono(new ParameterizedTypeReference<List<Queue>>() {})
                         .flatMapMany(Flux::fromIterable)
+                        .filter(queue -> queue.getQueueId() != null && !"exchange".equalsIgnoreCase(queue.getType()))
                         .doOnNext(queue -> {
                             queue.setRegion(region);
                             queue.setEnvironment(environmentId);
@@ -92,7 +96,7 @@ public class AnypointMqClient {
     public Flux<Exchange> listExchanges(String environmentId, String region) {
         log.debug("Listing exchanges for environment {} in region {}", environmentId, region);
         
-        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations?type=exchange",
+        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations",
                 anypointConfig.getBaseUrl(),
                 anypointConfig.getOrganizationId(),
                 environmentId,
@@ -103,9 +107,10 @@ public class AnypointMqClient {
                         .uri(url)
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
-                        .onStatus(HttpStatus::isError, response -> handleApiError(response, "list exchanges"))
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "list exchanges"))
                         .bodyToMono(new ParameterizedTypeReference<List<Exchange>>() {})
                         .flatMapMany(Flux::fromIterable)
+                        .filter(exchange -> exchange.getExchangeId() != null && "exchange".equalsIgnoreCase(exchange.getType()))
                         .doOnNext(exchange -> {
                             exchange.setRegion(region);
                             exchange.setEnvironment(environmentId);
@@ -148,7 +153,7 @@ public class AnypointMqClient {
                         .uri(url)
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
-                        .onStatus(HttpStatus::isError, response -> handleApiError(response, "get queue stats for " + queueId))
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get queue stats for " + queueId))
                         .bodyToMono(QueueStats.class)
                         .doOnNext(stats -> stats.setQueueId(queueId)))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
@@ -189,7 +194,7 @@ public class AnypointMqClient {
                         .uri(url)
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
-                        .onStatus(HttpStatus::isError, response -> handleApiError(response, "get exchange stats for " + exchangeId))
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get exchange stats for " + exchangeId))
                         .bodyToMono(ExchangeStats.class)
                         .doOnNext(stats -> stats.setExchangeId(exchangeId)))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
@@ -201,26 +206,50 @@ public class AnypointMqClient {
     }
 
     /**
-     * Handle API errors and create appropriate error responses
+     * Handle API errors and create appropriate error responses.
+     * Wraps errors in ApiException to preserve HTTP status for retry filtering.
      */
     private Mono<? extends Throwable> handleApiError(org.springframework.web.reactive.function.client.ClientResponse response, String operation) {
         return response.bodyToMono(String.class)
+                .defaultIfEmpty("")
                 .doOnNext(body -> log.error("API error during {}: status={}, body={}", operation, response.statusCode(), body))
-                .then(Mono.error(new RuntimeException(String.format("API call failed during %s with status: %s", operation, response.statusCode()))));
+                .then(Mono.error(new ApiException(response.statusCode().value(),
+                        String.format("API call failed during %s with status: %s", operation, response.statusCode()))));
     }
 
     /**
      * Determine if an error is retryable
      */
     private boolean isRetryableError(Throwable throwable) {
-        if (throwable instanceof WebClientResponseException) {
-            HttpStatus status = ((WebClientResponseException) throwable).getStatusCode();
+        if (throwable instanceof ApiException apiEx) {
             // Don't retry on client errors (4xx) except for 429 (Too Many Requests)
-            if (status.is4xxClientError() && status != HttpStatus.TOO_MANY_REQUESTS) {
+            if (apiEx.getStatusCode() >= 400 && apiEx.getStatusCode() < 500 && apiEx.getStatusCode() != 429) {
+                return false;
+            }
+        }
+        if (throwable instanceof WebClientResponseException wcEx) {
+            HttpStatusCode status = wcEx.getStatusCode();
+            if (status.is4xxClientError() && status.value() != 429) {
                 return false;
             }
         }
         // Retry on server errors, timeouts, and connection issues
         return true;
+    }
+
+    /**
+     * Custom exception that preserves HTTP status code for retry filtering
+     */
+    private static class ApiException extends RuntimeException {
+        private final int statusCode;
+
+        public ApiException(int statusCode, String message) {
+            super(message);
+            this.statusCode = statusCode;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
     }
 }

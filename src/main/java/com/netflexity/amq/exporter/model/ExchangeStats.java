@@ -87,7 +87,7 @@ public class ExchangeStats {
         }
         
         long delivered = messagesDelivered != null ? messagesDelivered : 0L;
-        return delivered.doubleValue() / messagesPublished.doubleValue();
+        return (double) delivered / messagesPublished.doubleValue();
     }
 
     /**

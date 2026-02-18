@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "java -jar target/anypoint-mq-prometheus-exporter-1.0.0-SNAPSHOT.jar"
+restartPolicyType = "ON_FAILURE"
+healthcheckPath = "/actuator/health"
+healthcheckTimeout = 30

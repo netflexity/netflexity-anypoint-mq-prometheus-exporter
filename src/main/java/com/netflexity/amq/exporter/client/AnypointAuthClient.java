@@ -3,7 +3,7 @@ package com.netflexity.amq.exporter.client;
 import com.netflexity.amq.exporter.config.AnypointConfig;
 import com.netflexity.amq.exporter.model.AuthToken;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -104,7 +104,7 @@ public class AnypointAuthClient {
                         .with("client_secret", anypointConfig.getAuth().getClientSecret())
                         .with("grant_type", "client_credentials"))
                 .retrieve()
-                .onStatus(HttpStatus::isError, response -> 
+                .onStatus(HttpStatusCode::isError, response -> 
                     response.bodyToMono(String.class)
                             .doOnNext(body -> log.error("Authentication failed with status {}: {}", response.statusCode(), body))
                             .then(Mono.error(new RuntimeException("Authentication failed with status: " + response.statusCode()))))
@@ -131,7 +131,7 @@ public class AnypointAuthClient {
                         anypointConfig.getAuth().getUsername(),
                         anypointConfig.getAuth().getPassword())))
                 .retrieve()
-                .onStatus(HttpStatus::isError, response -> 
+                .onStatus(HttpStatusCode::isError, response -> 
                     response.bodyToMono(String.class)
                             .doOnNext(body -> log.error("Login failed with status {}: {}", response.statusCode(), body))
                             .then(Mono.error(new RuntimeException("Login failed with status: " + response.statusCode()))))

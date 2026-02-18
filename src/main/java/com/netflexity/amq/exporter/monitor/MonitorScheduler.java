@@ -137,25 +137,22 @@ public class MonitorScheduler {
      * Evaluate a single monitor against all matching queues
      */
     private List<MonitorResult> evaluateMonitor(MonitorDefinition monitor) {
-        Map<String, QueueStats> queueStats = metricsCollector.getCurrentQueueStats();
-        return queueStats.values().stream()
-                .filter(queueStats -> monitor.matchesQueue(queueStats.getQueue().getSanitizedQueueName()))
-                .map(queueStats -> {
+        Map<String, QueueStats> allQueueStats = metricsCollector.getCurrentQueueStats();
+        return allQueueStats.values().stream()
+                .filter(qs -> monitor.matchesQueue(qs.getQueue().getSanitizedQueueName()))
+                .map(qs -> {
                     try {
                         // Find environment name for this queue
-                        String environmentName = findEnvironmentName(queueStats);
-                        MonitorResult result = monitorEvaluator.evaluate(monitor, queueStats, environmentName);
+                        String environmentName = findEnvironmentName(qs);
+                        MonitorResult result = monitorEvaluator.evaluate(monitor, qs, environmentName);
                         
                         // Record evaluation
-                        monitorEvaluationsCounter.increment(
-                            "monitor_name", monitor.getName(),
-                            "result", result.isTriggered() ? "triggered" : "ok"
-                        );
+                        monitorEvaluationsCounter.increment();
                         
                         return result;
                     } catch (Exception e) {
                         log.error("Error evaluating monitor {} for queue {}: {}", 
-                            monitor.getName(), queueStats.getQueue().getSanitizedQueueName(), e.getMessage());
+                            monitor.getName(), qs.getQueue().getSanitizedQueueName(), e.getMessage());
                         return null;
                     }
                 })
@@ -174,14 +171,14 @@ public class MonitorScheduler {
         // Monitor triggered gauge
         monitorMetrics.computeIfAbsent(metricKey, k -> {
             AtomicLong atomicValue = new AtomicLong(0);
-            Gauge.builder("anypoint_mq_monitor_triggered")
+            Gauge.builder("anypoint_mq_monitor_triggered", atomicValue, AtomicLong::get)
                     .description("Monitor trigger status (1 if triggered, 0 if OK)")
                     .tag("monitor_name", result.getMonitorName())
                     .tag("queue_name", result.getQueueName())
                     .tag("environment", result.getEnvironmentName())
                     .tag("region", result.getRegion())
                     .tag("severity", result.getSeverity() != null ? result.getSeverity().toString() : "UNKNOWN")
-                    .register(meterRegistry, atomicValue, AtomicLong::get);
+                    .register(meterRegistry);
             return atomicValue;
         }).set(result.isTriggered() ? 1 : 0);
 
@@ -190,10 +187,10 @@ public class MonitorScheduler {
             String timestampKey = "last_triggered_" + result.getMonitorName();
             monitorMetrics.computeIfAbsent(timestampKey, k -> {
                 AtomicLong atomicValue = new AtomicLong(0);
-                Gauge.builder("anypoint_mq_monitor_last_triggered_timestamp")
+                Gauge.builder("anypoint_mq_monitor_last_triggered_timestamp", atomicValue, AtomicLong::get)
                         .description("Unix timestamp when monitor was last triggered")
                         .tag("monitor_name", result.getMonitorName())
-                        .register(meterRegistry, atomicValue, AtomicLong::get);
+                        .register(meterRegistry);
                 return atomicValue;
             }).set(System.currentTimeMillis() / 1000);
         }
@@ -207,12 +204,12 @@ public class MonitorScheduler {
             
             healthScoreMetrics.computeIfAbsent(healthKey, k -> {
                 AtomicLong atomicValue = new AtomicLong(0);
-                Gauge.builder("anypoint_mq_queue_health_score")
+                Gauge.builder("anypoint_mq_queue_health_score", atomicValue, value -> value.get() / 100.0)
                         .description("Queue health score (0-100)")
                         .tag("queue_name", result.getQueueName())
                         .tag("environment", result.getEnvironmentName())
                         .tag("region", result.getRegion())
-                        .register(meterRegistry, atomicValue, value -> value.get() / 100.0); // Convert to 0-1 range
+                        .register(meterRegistry); // Convert to 0-1 range
                 return atomicValue;
             }).set((long) (healthScore * 100)); // Store as integer for precision
         }

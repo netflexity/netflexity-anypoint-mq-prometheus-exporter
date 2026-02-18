@@ -3,8 +3,8 @@ package com.netflexity.amq.exporter.health;
 import com.netflexity.amq.exporter.client.AnypointAuthClient;
 import com.netflexity.amq.exporter.config.AnypointConfig;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.actuator.health.Health;
-import org.springframework.boot.actuator.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
