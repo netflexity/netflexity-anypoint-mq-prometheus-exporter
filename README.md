@@ -1,706 +1,272 @@
-# Anypoint MQ Prometheus Exporter
+<p align="center">
+  <h1 align="center">Anypoint MQ Prometheus Exporter</h1>
+  <p align="center">
+    Real-time metrics & monitoring for MuleSoft Anypoint MQ — auto-discovers every org, environment, queue, and exchange.
+  </p>
+</p>
 
-A production-ready Prometheus exporter for MuleSoft Anypoint MQ that collects queue and exchange metrics from the Anypoint MQ Stats API and exposes them in Prometheus format.
+<p align="center">
+  <a href="https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html"><img src="https://img.shields.io/badge/Java-17-orange?logo=openjdk&logoColor=white" alt="Java 17"></a>
+  <a href="https://spring.io/projects/spring-boot"><img src="https://img.shields.io/badge/Spring%20Boot-3.x-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot 3"></a>
+  <a href="https://prometheus.io/"><img src="https://img.shields.io/badge/Prometheus-Exporter-E6522C?logo=prometheus&logoColor=white" alt="Prometheus"></a>
+  <a href="https://grafana.com/"><img src="https://img.shields.io/badge/Grafana-Ready-F46800?logo=grafana&logoColor=white" alt="Grafana"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
+</p>
+
+---
+
+## Overview
+
+A turnkey Prometheus exporter for **MuleSoft Anypoint MQ**. Point it at your Anypoint Platform Connected App credentials and it will automatically discover all organizations, environments, queues, and exchanges — then expose production-grade metrics at `/actuator/prometheus`.
+
+No manual configuration of queue names. No YAML lists to maintain. It just works.
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────┐
+│                 Anypoint Platform APIs                │
+│  /accounts/api/me              (org discovery)       │
+│  /accounts/api/organizations/… (env discovery)       │
+│  /mq/admin/api/v1/…           (queue/exchange list)  │
+│  /mq/stats/api/v1/…           (metrics)              │
+└──────────────────────┬───────────────────────────────┘
+                       │
+                       ▼
+┌──────────────────────────────────────────────────────┐
+│            AMQ Exporter  (Spring Boot 3)             │
+│                                                      │
+│  /actuator/prometheus   Prometheus metrics endpoint  │
+│  /api/status            Discovered orgs & envs       │
+│  /api/health-scores     Queue health scores (Pro)    │
+│  /api/monitors          Monitor definitions (Pro)    │
+│                                                      │
+│  ┌────────────────┐  ┌─────────────────────────────┐ │
+│  │  Auto-Discovery│  │  Monitors Module (Pro)      │ │
+│  │  • Orgs        │  │  • Queue depth alerts       │ │
+│  │  • Environments│  │  • DLQ detection            │ │
+│  │  • Queues      │  │  • Throughput anomalies     │ │
+│  │  • Exchanges   │  │  • Health scores (0–100)    │ │
+│  └────────────────┘  └─────────────────────────────┘ │
+└──────────────────────┬───────────────────────────────┘
+                       │ scrape /actuator/prometheus
+                       ▼
+┌──────────────────────────────────────────────────────┐
+│                    Prometheus                        │
+│              30-day retention, PromQL                │
+└──────────────────────┬───────────────────────────────┘
+                       │ PromQL queries
+                       ▼
+┌──────────────────────────────────────────────────────┐
+│                     Grafana                          │
+│    Pre-built dashboards • Alerts • Visualizations    │
+└──────────────────────────────────────────────────────┘
+```
 
 ## Features
 
-- **Comprehensive Metrics**: Queue depth, message rates, DLQ monitoring, and exchange statistics
-- **Multi-Environment**: Monitor multiple Anypoint environments and regions simultaneously
-- **Authentication**: Supports both username/password and Connected App authentication
-- **Production Ready**: Health checks, error handling, retry logic, and comprehensive logging
-- **Pre-built Dashboard**: Grafana dashboard with queue monitoring, alerting, and performance metrics
-- **Docker Support**: Ready-to-run Docker containers with docker-compose setup
-- **Monitoring Stack**: Includes Prometheus and Grafana for complete monitoring solution
+- **Zero-Config Discovery** — Automatically finds all orgs, environments, queues, and exchanges. Refreshes every 5 minutes.
+- **Prometheus-Native** — Standard `/actuator/prometheus` endpoint via Micrometer. Drop-in compatible with any Prometheus scraper.
+- **Pre-Built Grafana Dashboards** — Queue depth, throughput, exchange activity, inventory table — ready to import.
+- **Multi-Org Support** — Monitor queues across every organization and environment your Connected App can access.
+- **Advanced Monitors (Pro)** — Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
+- **Multi-Channel Alerting (Pro)** — Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
+- **Works Everywhere** — Grafana, Datadog, New Relic, Dynatrace — anything that scrapes Prometheus metrics.
+- **Docker Compose Included** — Full stack (Exporter + Prometheus + Grafana) in one command.
+- **Railway-Ready** — Deploys as 3 Railway services for ~$15/month. [Setup guide →](RAILWAY-SETUP.md)
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
+### 1. Get Anypoint Connected App Credentials
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/netflexity/anypoint-mq-prometheus-exporter.git
-   cd anypoint-mq-prometheus-exporter
-   ```
+Anypoint Platform → Access Management → Connected Apps → **Create**:
+- Type: *App acts on its own behalf (client credentials)*
+- Scopes: `View Environment`, `View Organization`, `Anypoint MQ Admin`, `Anypoint MQ Stats`
 
-2. **Configure environment variables**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your Anypoint Platform credentials
-   ```
+### 2. Run with Docker Compose
 
-3. **Start the stack**:
-   ```bash
-   docker-compose up -d
-   ```
+```bash
+# Clone the repo
+git clone https://bitbucket.org/netflexity/anypoint-mq-prometheus-exporter.git
+cd anypoint-mq-prometheus-exporter
 
-4. **Access the services**:
-   - **Grafana**: http://localhost:3000 (admin/admin)
-   - **Prometheus**: http://localhost:9090
-   - **Exporter Metrics**: http://localhost:9101/actuator/prometheus
-   - **Health Check**: http://localhost:9101/actuator/health
+# Set your credentials
+export ANYPOINT_CLIENT_ID=your-connected-app-client-id
+export ANYPOINT_CLIENT_SECRET=your-connected-app-client-secret
 
-### Manual Installation
-
-1. **Requirements**:
-   - Java 17+
-   - Maven 3.6+
-
-2. **Build and run**:
-   ```bash
-   mvn clean package
-   java -jar target/anypoint-mq-prometheus-exporter-1.0.0.jar
-   ```
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `ANYPOINT_ORG_ID` | Anypoint Organization ID | Yes | - |
-| `ANYPOINT_ENV_ID` | Environment ID to monitor | Yes | - |
-| `ANYPOINT_ENV_NAME` | Environment name for labeling | No | `Production` |
-| `ANYPOINT_CLIENT_ID` | Connected App Client ID | Yes* | - |
-| `ANYPOINT_CLIENT_SECRET` | Connected App Client Secret | Yes* | - |
-| `ANYPOINT_USERNAME` | Username for login | Yes* | - |
-| `ANYPOINT_PASSWORD` | Password for login | Yes* | - |
-
-*Either Connected App credentials OR username/password required.
-
-### Application Configuration
-
-Create `application.yml` or use environment variables:
-
-```yaml
-anypoint:
-  baseUrl: https://anypoint.mulesoft.com
-  organizationId: ${ANYPOINT_ORG_ID}
-  auth:
-    # Option 1: Connected App (Recommended)
-    clientId: ${ANYPOINT_CLIENT_ID}
-    clientSecret: ${ANYPOINT_CLIENT_SECRET}
-    # Option 2: Username/Password
-    username: ${ANYPOINT_USERNAME}
-    password: ${ANYPOINT_PASSWORD}
-  environments:
-    - id: ${ANYPOINT_ENV_ID}
-      name: ${ANYPOINT_ENV_NAME:Production}
-  regions:
-    - us-east-1
-    - eu-west-1
-  scrape:
-    intervalSeconds: 60
-    periodSeconds: 600
+# Start the full stack
+docker-compose up -d
 ```
 
-## Setting Up Anypoint Connected App
+| Service    | URL                              |
+|------------|----------------------------------|
+| Exporter   | http://localhost:9101             |
+| Prometheus | http://localhost:9090             |
+| Grafana    | http://localhost:3000 (admin / netflexity2026) |
 
-### Create Connected App (Recommended)
+### 3. Verify
 
-1. **Access Anypoint Platform**:
-   - Go to https://anypoint.mulesoft.com
-   - Navigate to **Access Management** > **Connected Apps**
+```bash
+# Check discovered orgs and environments
+curl http://localhost:9101/api/status
 
-2. **Create New Connected App**:
-   - Click **Create App**
-   - **Name**: `Prometheus Exporter`
-   - **Grant Types**: Select **Client Credentials**
-   - **Scopes**: 
-     - `read:stats` - Read MQ statistics
-     - `read:destinations` - List queues and exchanges
+# View raw Prometheus metrics
+curl http://localhost:9101/actuator/prometheus | grep anypoint_mq
+```
 
-3. **Get Credentials**:
-   - Note the **Client ID** and **Client Secret**
-   - Use these in your configuration
-
-4. **Set Environment Variables**:
-   ```bash
-   export ANYPOINT_CLIENT_ID="your-client-id"
-   export ANYPOINT_CLIENT_SECRET="your-client-secret"
-   export ANYPOINT_ORG_ID="your-org-id"
-   export ANYPOINT_ENV_ID="your-env-id"
-   ```
-
-## Metrics Exposed
+## Metrics Reference
 
 ### Queue Metrics
 
-| Metric | Type | Description | Labels |
-|--------|------|-------------|--------|
-| `anypoint_mq_queue_messages_in_flight` | Gauge | Messages being processed | queue_name, environment, region |
-| `anypoint_mq_queue_messages_in_queue` | Gauge | Messages waiting in queue | queue_name, environment, region |
-| `anypoint_mq_queue_messages_sent_total` | Counter | Total messages sent | queue_name, environment, region |
-| `anypoint_mq_queue_messages_received_total` | Counter | Total messages received | queue_name, environment, region |
-| `anypoint_mq_queue_messages_acked_total` | Counter | Total messages acknowledged | queue_name, environment, region |
-| `anypoint_mq_queue_size_bytes` | Gauge | Queue size in bytes | queue_name, environment, region |
+| Metric | Type | Description |
+|--------|------|-------------|
+| `anypoint_mq_queue` | Gauge | Queue metadata (value=1). Labels include `is_fifo`, `is_dlq`, `max_deliveries`, `ttl`. |
+| `anypoint_mq_queue_messages_in_queue` | Gauge | Messages waiting to be consumed |
+| `anypoint_mq_queue_messages_in_flight` | Gauge | Messages currently being processed |
+| `anypoint_mq_queue_messages_sent` | Gauge | Messages sent in the scrape period |
+| `anypoint_mq_queue_messages_received` | Gauge | Messages received in the scrape period |
+| `anypoint_mq_queue_messages_acked` | Gauge | Messages acknowledged in the scrape period |
 
 ### Exchange Metrics
 
-| Metric | Type | Description | Labels |
-|--------|------|-------------|--------|
-| `anypoint_mq_exchange_messages_published_total` | Counter | Messages published to exchange | exchange_name, environment, region |
-| `anypoint_mq_exchange_messages_delivered_total` | Counter | Messages delivered from exchange | exchange_name, environment, region |
+| Metric | Type | Description |
+|--------|------|-------------|
+| `anypoint_mq_exchange_messages_published` | Gauge | Messages published to the exchange |
+| `anypoint_mq_exchange_messages_delivered` | Gauge | Messages delivered from the exchange |
 
-### Metadata Metrics
+### Exporter Metrics
 
-| Metric | Type | Description | Labels |
-|--------|------|-------------|--------|
-| `anypoint_mq_queue_info` | Gauge | Queue metadata (value=1) | queue_name, environment, region, is_dlq, is_fifo, max_deliveries, ttl |
-| `anypoint_mq_scrape_duration_seconds` | Gauge | Time taken to scrape metrics | - |
-| `anypoint_mq_scrape_errors_total` | Counter | Total scrape errors | cause |
-| `anypoint_mq_last_scrape_timestamp_seconds` | Gauge | Unix timestamp of last scrape | - |
+| Metric | Type | Description |
+|--------|------|-------------|
+| `anypoint_mq_last_scrape_timestamp_seconds` | Gauge | Unix timestamp of the last successful scrape |
 
-## Advanced Monitors (PRO License Required)
+All queue metrics carry labels: `environment`, `queue_name`, `region`.  
+All exchange metrics carry labels: `environment`, `exchange_name`, `region`.
 
-The exporter includes an advanced monitoring system with intelligent alerting, health scoring, and notifications. This feature requires a PRO license.
+## Configuration
 
-### Features
+All settings can be overridden via environment variables or `application.yml`.
 
-- **Smart Monitors**: Queue depth thresholds, DLQ alerts, throughput anomalies, health scoring
-- **Multi-Channel Notifications**: Slack, PagerDuty, email, Microsoft Teams, custom webhooks
-- **Cooldown & Deduplication**: Prevent alert spam with intelligent cooldown periods
-- **REST API**: Programmatic access to monitor status and health scores
-- **Trend Analysis**: Baseline learning and percentage change detection
+### Core Settings
 
-### License Tiers
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANYPOINT_CLIENT_ID` | — | Connected App client ID (**required**) |
+| `ANYPOINT_CLIENT_SECRET` | — | Connected App client secret (**required**) |
+| `ANYPOINT_AUTO_DISCOVERY` | `true` | Auto-discover all orgs and environments |
+| `ANYPOINT_ORG_ID` | *(auto)* | Root organization ID (auto-discovered if omitted) |
+| `ANYPOINT_REGIONS` | `us-east-1` | Comma-separated MQ regions to scrape |
+| `PORT` | `9101` | HTTP server port |
 
-| Feature | Free | PRO |
-|---------|------|-----|
-| Raw Metrics Collection | ✅ | ✅ |
-| Prometheus Integration | ✅ | ✅ |
-| Grafana Dashboard | ✅ | ✅ |
-| Advanced Monitors | ❌ | ✅ |
-| Alerting & Notifications | ❌ | ✅ |
-| Queue Health Scores | ❌ | ✅ |
-| REST API | ❌ | ✅ |
-| Trend Analysis | ❌ | ✅ |
+### Scrape Settings
 
-### Configuration
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `anypoint.scrape.intervalSeconds` | `60` | How often to scrape metrics (seconds) |
+| `anypoint.scrape.periodSeconds` | `600` | Stats API lookback window (seconds) |
+| `anypoint.scrape.enabled` | `true` | Enable/disable metric collection |
 
-Enable advanced monitors in `application.yml`:
+### HTTP Client
 
-```yaml
-anypoint:
-  # PRO License key (contact sales@netflexity.com)
-  license:
-    key: ${ANYPOINT_LICENSE_KEY}
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `anypoint.http.connectTimeoutSeconds` | `30` | HTTP connect timeout |
+| `anypoint.http.readTimeoutSeconds` | `60` | HTTP read timeout |
+| `anypoint.http.maxRetries` | `3` | Max retry attempts for failed API calls |
 
-  # Enable advanced monitoring
-  monitors:
-    enabled: true
-    evaluationIntervalSeconds: 60
-    defaults:
-      cooldownMinutes: 15
-      evaluationWindowMinutes: 5
-    
-    # Monitor definitions
-    definitions:
-      - name: high-queue-depth
-        description: "Alert when queue depth exceeds threshold"
-        type: QUEUE_DEPTH
-        target: "*"  # All queues (supports wildcards like "order-*")
-        condition: GT
-        threshold: 1000
-        severity: WARNING
-        notifications: [slack-ops]
-      
-      - name: dlq-alert
-        description: "Alert on any messages in DLQ"
-        type: DLQ_ALERT
-        target: "*"
-        threshold: 0
-        condition: GT
-        severity: CRITICAL
-        notifications: [slack-ops, pagerduty]
-      
-      - name: throughput-drop
-        description: "Alert on significant throughput decrease"
-        type: THROUGHPUT_DROP
-        target: "*"
-        condition: PCT_CHANGE
-        threshold: -50  # 50% drop
-        evaluationWindowMinutes: 30
-        severity: WARNING
-        notifications: [slack-ops]
-      
-      - name: queue-health
-        description: "Alert on poor queue health score"
-        type: QUEUE_HEALTH
-        target: "*"
-        condition: LT
-        threshold: 50  # Health score below 50%
-        severity: WARNING
-        notifications: [slack-ops]
-    
-    # Notification channels
-    notifications:
-      channels:
-        - name: slack-ops
-          type: slack
-          enabled: true
-          webhookUrl: ${SLACK_WEBHOOK_URL}
-        
-        - name: pagerduty
-          type: pagerduty
-          enabled: true
-          routingKey: ${PAGERDUTY_ROUTING_KEY}
-        
-        - name: email-ops
-          type: email
-          enabled: true
-          to: ${ALERT_EMAIL_TO}
-          from: ${ALERT_EMAIL_FROM:noreply@netflexity.com}
-        
-        - name: teams-ops
-          type: teams
-          enabled: true
-          webhookUrl: ${TEAMS_WEBHOOK_URL}
-        
-        - name: custom-webhook
-          type: webhook
-          enabled: true
-          url: ${WEBHOOK_URL}
-          headers:
-            Authorization: "Bearer ${WEBHOOK_TOKEN}"
+### Monitors (Pro)
 
-# Mail configuration (for email notifications)
-spring.mail:
-  host: ${MAIL_HOST:localhost}
-  port: ${MAIL_PORT:587}
-  username: ${MAIL_USERNAME}
-  password: ${MAIL_PASSWORD}
-  properties:
-    mail:
-      smtp:
-        auth: true
-        starttls:
-          enable: true
-```
-
-### Monitor Types
-
-#### QUEUE_DEPTH
-Monitors current queue depth against a threshold.
-
-**Example**: Alert when any queue has more than 1000 messages
-```yaml
-- name: high-depth-alert
-  type: QUEUE_DEPTH
-  target: "*"
-  condition: GT
-  threshold: 1000
-  severity: WARNING
-```
-
-#### DLQ_ALERT
-Monitors dead letter queues for any messages.
-
-**Example**: Critical alert on any DLQ messages
-```yaml
-- name: dlq-monitor
-  type: DLQ_ALERT
-  target: "*"
-  threshold: 0
-  condition: GT
-  severity: CRITICAL
-```
-
-#### THROUGHPUT_DROP/THROUGHPUT_SPIKE
-Monitors percentage changes in message throughput.
-
-**Example**: Alert on 50% throughput drop over 30 minutes
-```yaml
-- name: throughput-drop
-  type: THROUGHPUT_DROP
-  target: "order-*"
-  condition: PCT_CHANGE
-  threshold: -50
-  evaluationWindowMinutes: 30
-  severity: WARNING
-```
-
-#### QUEUE_HEALTH
-Monitors composite health score (0-100) based on:
-- Queue depth ratio
-- DLQ presence
-- Consumer lag (in-flight vs received ratio)
-- Throughput stability
-
-**Example**: Alert when health score drops below 50
-```yaml
-- name: poor-health
-  type: QUEUE_HEALTH
-  target: "*"
-  condition: LT
-  threshold: 50
-  severity: WARNING
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ANYPOINT_MONITORS_ENABLED` | `true` | Enable health scores and alerting |
+| `ANYPOINT_LICENSE_KEY` | — | Pro license key for monitors module |
+| `anypoint.monitors.evaluationIntervalSeconds` | `60` | Monitor evaluation frequency |
+| `anypoint.monitors.defaults.cooldownMinutes` | `15` | Alert cooldown to prevent notification storms |
 
 ### Notification Channels
 
-#### Slack
-```yaml
-- name: slack-alerts
-  type: slack
-  webhookUrl: "${SLACK_WEBHOOK_URL}"
-```
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SLACK_ENABLED` | `false` | Enable Slack notifications |
+| `SLACK_WEBHOOK_URL` | — | Slack incoming webhook URL |
+| `PAGERDUTY_ENABLED` | `false` | Enable PagerDuty notifications |
+| `PAGERDUTY_ROUTING_KEY` | — | PagerDuty Events API routing key |
+| `EMAIL_ENABLED` | `false` | Enable email notifications |
+| `ALERT_EMAIL_TO` | — | Recipient email address |
+| `TEAMS_ENABLED` | `false` | Enable Microsoft Teams notifications |
+| `TEAMS_WEBHOOK_URL` | — | Teams incoming webhook URL |
+| `WEBHOOK_ENABLED` | `false` | Enable generic webhook notifications |
+| `WEBHOOK_URL` | — | Webhook endpoint URL |
+| `WEBHOOK_TOKEN` | — | Bearer token for webhook auth |
 
-#### PagerDuty
-```yaml
-- name: pagerduty-critical
-  type: pagerduty
-  routingKey: R00000000000000000000000000000
-```
+## Screenshots
 
-#### Email (SMTP)
-```yaml
-- name: email-alerts
-  type: email
-  to: ops@company.com
-  from: monitoring@company.com
-```
+> 📸 *Coming soon — Grafana dashboard screenshots will be added here.*
 
-#### Microsoft Teams
-```yaml
-- name: teams-alerts
-  type: teams
-  webhookUrl: https://outlook.office.com/webhook/...
-```
+<!--
+![Dashboard Overview](docs/screenshots/dashboard-overview.png)
+![Queue Depth](docs/screenshots/queue-depth.png)
+![Throughput](docs/screenshots/throughput.png)
+-->
 
-#### Custom Webhook
-```yaml
-- name: custom-api
-  type: webhook
-  url: https://api.company.com/alerts
-  headers:
-    Authorization: "Bearer token123"
-    X-Source: "anypoint-mq-monitor"
-```
+## API Endpoints
 
-### REST API
-
-Access monitor status and health scores via REST API:
-
-```bash
-# License information
-curl http://localhost:9101/api/license
-
-# All monitors status
-curl http://localhost:9101/api/monitors
-
-# Specific monitor
-curl http://localhost:9101/api/monitors/high-queue-depth
-
-# Queue health scores
-curl http://localhost:9101/api/health-scores
-
-# Specific queue health
-curl http://localhost:9101/api/health-scores/order-processing-queue
-
-# Test monitor notification
-curl -X POST http://localhost:9101/api/monitors/high-queue-depth/test
-```
-
-### Advanced Metrics
-
-Additional Prometheus metrics for monitoring:
-
-| Metric | Type | Description | Labels |
-|--------|------|-------------|--------|
-| `anypoint_mq_monitor_triggered` | Gauge | Monitor trigger status (1=triggered, 0=OK) | monitor_name, queue_name, environment, region, severity |
-| `anypoint_mq_monitor_evaluations_total` | Counter | Total monitor evaluations | monitor_name, result |
-| `anypoint_mq_monitor_notifications_total` | Counter | Notifications sent | monitor_name, channel, status |
-| `anypoint_mq_monitor_notifications_failed_total` | Counter | Failed notifications | monitor_name, channel, error |
-| `anypoint_mq_queue_health_score` | Gauge | Queue health score (0-100) | queue_name, environment, region |
-| `anypoint_mq_monitor_last_triggered_timestamp` | Gauge | Last trigger timestamp | monitor_name |
-
-### Health Score Calculation
-
-Queue health scores (0-100) are calculated based on:
-
-1. **Queue Depth Penalty** (0-20 points): Logarithmic penalty for high queue depth
-2. **DLQ Penalty** (0-30 points): Major penalty for messages in dead letter queues
-3. **Consumer Lag Penalty** (0-25 points): Penalty for high in-flight to received ratio
-4. **Throughput Stability Penalty** (0-15 points): Penalty for high variance in throughput
-
-**Scoring**:
-- **90-100**: Excellent - Queue operating optimally
-- **70-89**: Good - Minor issues, monitor closely
-- **50-69**: Fair - Performance degradation detected
-- **30-49**: Poor - Significant issues, action needed
-- **0-29**: Critical - Queue health severely compromised
-
-### Getting a PRO License
-
-Advanced monitoring features require a PRO license. Contact **sales@netflexity.com** for pricing and licensing.
-
-## Grafana Dashboard
-
-The included Grafana dashboard provides:
-
-- **Queue Depth Monitoring**: Real-time queue and in-flight message counts
-- **Message Throughput**: Send/receive rates over time
-- **Dead Letter Queue Alerts**: Visual alerts for DLQ messages
-- **Top Queues by Depth**: Identify problematic queues
-- **Environment Filtering**: Multi-environment support with dropdown
-- **Performance Metrics**: Scrape duration and error tracking
-
-### Dashboard Features
-
-- **Auto-refresh**: Updates every 30 seconds
-- **Time Range Selector**: Last 1 hour by default
-- **Environment Variables**: Filter by environment and region
-- **Alert Thresholds**: Configurable warning levels
-- **Responsive Design**: Works on desktop and mobile
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/actuator/prometheus` | GET | Prometheus metrics (scrape target) |
+| `/actuator/health` | GET | Application health check |
+| `/api/status` | GET | Discovered orgs, environments, and config |
+| `/api/discover` | POST | Trigger manual re-discovery |
+| `/api/health-scores` | GET | Queue health scores (Pro) |
+| `/api/monitors` | GET | Monitor definitions (Pro) |
 
 ## Deployment
 
-### Kubernetes
+### Docker Compose (Recommended for dev/staging)
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: anypoint-mq-exporter
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: anypoint-mq-exporter
-  template:
-    metadata:
-      labels:
-        app: anypoint-mq-exporter
-    spec:
-      containers:
-      - name: exporter
-        image: netflexity/anypoint-mq-prometheus-exporter:1.0.0
-        ports:
-        - containerPort: 9101
-        env:
-        - name: ANYPOINT_ORG_ID
-          valueFrom:
-            secretKeyRef:
-              name: anypoint-secrets
-              key: org-id
-        - name: ANYPOINT_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: anypoint-secrets
-              key: client-id
-        - name: ANYPOINT_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: anypoint-secrets
-              key: client-secret
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 9101
-          initialDelaySeconds: 60
-          periodSeconds: 30
-        readinessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 9101
-          initialDelaySeconds: 10
-          periodSeconds: 10
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: anypoint-mq-exporter
-spec:
-  selector:
-    app: anypoint-mq-exporter
-  ports:
-  - port: 9101
-    targetPort: 9101
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: anypoint-mq-exporter
-spec:
-  selector:
-    matchLabels:
-      app: anypoint-mq-exporter
-  endpoints:
-  - port: http
-    path: /actuator/prometheus
-```
+The included `docker-compose.yml` runs the full stack: Exporter, Prometheus (30-day retention), and Grafana with pre-provisioned dashboards.
 
-### Prometheus Configuration
+### Railway (Recommended for production)
 
-```yaml
-scrape_configs:
-  - job_name: 'anypoint-mq-exporter'
-    static_configs:
-      - targets: ['anypoint-mq-exporter:9101']
-    scrape_interval: 60s
-    metrics_path: /actuator/prometheus
-```
+Deploy as 3 Railway services for ~$15/month. See the full [Railway Setup Guide](RAILWAY-SETUP.md) for step-by-step instructions.
 
-## Integration with Other Tools
-
-### Datadog
-
-Add Prometheus integration to scrape the exporter:
-
-```yaml
-# datadog-agent/conf.d/prometheus.yaml
-instances:
-  - prometheus_url: http://anypoint-mq-exporter:9101/actuator/prometheus
-    namespace: anypoint_mq
-    metrics:
-      - anypoint_mq_queue_*
-      - anypoint_mq_exchange_*
-```
-
-### New Relic
-
-Use the Prometheus OpenMetrics integration:
-
-```yaml
-# newrelic-prometheus-configurator.yml
-transformations:
-  - description: "Anypoint MQ metrics"
-    rename_attributes:
-      queue_name: "queue"
-      environment: "env"
-```
-
-### Dynatrace
-
-Configure a custom device for the exporter endpoint:
-
-1. Go to **Settings** > **Monitoring** > **Monitored technologies**
-2. Add custom device: `anypoint-mq-exporter:9101`
-3. Set metrics path: `/actuator/prometheus`
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Authentication Failed**
-   ```
-   ERROR: Authentication failed with status 401
-   ```
-   - Verify your Connected App credentials
-   - Check organization ID and environment ID
-   - Ensure the Connected App has required permissions
-
-2. **No Metrics Appearing**
-   ```
-   INFO: Completed metrics collection successfully
-   ```
-   - Check if queues exist in the specified environment/region
-   - Verify network connectivity to Anypoint Platform
-   - Review logs for specific error messages
-
-3. **High Memory Usage**
-   ```
-   OutOfMemoryError
-   ```
-   - Reduce scrape frequency (`anypoint.scrape.intervalSeconds`)
-   - Limit environments and regions being monitored
-   - Increase container memory limits
-
-### Debug Logging
-
-Enable debug logging in `application.yml`:
-
-```yaml
-logging:
-  level:
-    com.netflexity.amq.exporter: DEBUG
-    org.springframework.web.reactive: DEBUG
-```
-
-### Health Check Endpoints
-
-- **Health**: `GET /actuator/health`
-- **Metrics**: `GET /actuator/prometheus`
-- **Info**: `GET /actuator/info`
-
-## Development
-
-### Building from Source
+### Standalone JAR
 
 ```bash
-# Clone repository
-git clone https://github.com/netflexity/anypoint-mq-prometheus-exporter.git
-cd anypoint-mq-prometheus-exporter
-
-# Build with Maven
-mvn clean package
-
-# Run tests
-mvn test
-
-# Build Docker image
-docker build -t anypoint-mq-exporter:dev .
+mvn clean package -DskipTests
+java -jar target/anypoint-mq-prometheus-exporter-*.jar
 ```
 
-### Running Tests
+## Free vs Pro
 
-```bash
-# Unit tests
-mvn test
-
-# Integration tests
-mvn verify
-```
-
-### Code Structure
-
-```
-src/main/java/com/netflexity/amq/exporter/
-├── Application.java                 # Main application class
-├── config/
-│   ├── AnypointConfig.java         # Configuration properties
-│   └── ExporterConfig.java         # Metrics and WebClient config
-├── client/
-│   ├── AnypointAuthClient.java     # Authentication handling
-│   └── AnypointMqClient.java       # MQ API client
-├── collector/
-│   └── MqMetricsCollector.java     # Scheduled metrics collection
-├── health/
-│   └── AnypointHealthIndicator.java # Health check implementation
-└── model/
-    ├── AuthToken.java              # Authentication token model
-    ├── Queue.java                  # Queue model
-    ├── QueueStats.java             # Queue statistics model
-    ├── Exchange.java               # Exchange model
-    └── ExchangeStats.java          # Exchange statistics model
-```
+| Feature | Free | Pro |
+|---------|:----:|:---:|
+| Queue & exchange metrics | ✅ | ✅ |
+| Auto-discovery | ✅ | ✅ |
+| Prometheus endpoint | ✅ | ✅ |
+| Grafana dashboards | ✅ | ✅ |
+| Health scores | — | ✅ |
+| Queue depth monitors | — | ✅ |
+| DLQ alerting | — | ✅ |
+| Throughput anomaly detection | — | ✅ |
+| Multi-channel notifications | — | ✅ |
 
 ## Contributing
 
+Contributions are welcome! Please:
+
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Run tests and ensure they pass
-6. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
 
-## Support
+---
 
-- **Issues**: [GitHub Issues](https://github.com/netflexity/anypoint-mq-prometheus-exporter/issues)
-- **Documentation**: [Wiki](https://github.com/netflexity/anypoint-mq-prometheus-exporter/wiki)
-- **Discussions**: [GitHub Discussions](https://github.com/netflexity/anypoint-mq-prometheus-exporter/discussions)
-
-## Changelog
-
-### Version 1.0.0
-- Initial release
-- Queue and exchange metrics collection
-- Multi-environment support
-- Authentication with Connected Apps
-- Docker and Kubernetes deployment support
-- Pre-built Grafana dashboard
-- Comprehensive health checks and error handling
+<p align="center">
+  Built by <a href="https://netflexity.com">Netflexity</a> · Powered by <a href="https://spring.io/projects/spring-boot">Spring Boot</a> & <a href="https://micrometer.io/">Micrometer</a>
+</p>
