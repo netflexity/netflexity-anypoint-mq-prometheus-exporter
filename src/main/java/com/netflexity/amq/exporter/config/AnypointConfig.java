@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,17 +41,20 @@ public class AnypointConfig {
     private Auth auth = new Auth();
 
     /**
-     * Organization ID for the Anypoint account
+     * Enable auto-discovery of organizations and environments
      */
-    @NotEmpty
+    private boolean autoDiscovery = false;
+
+    /**
+     * Organization ID for the Anypoint account (used as fallback when auto-discovery is off)
+     */
     private String organizationId;
 
     /**
-     * List of environments to monitor
+     * List of environments to monitor (auto-populated when autoDiscovery=true)
      */
     @Valid
-    @NotEmpty
-    private List<Environment> environments;
+    private List<Environment> environments = new ArrayList<>();
 
     /**
      * List of regions to monitor (e.g., us-east-1, us-west-2)
