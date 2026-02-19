@@ -14,7 +14,7 @@ Anypoint MQ Stats API
 
 ## Step 1: Exporter (already deployed)
 
-URL: `https://anypoint-mq-prometheus-exporter-production.up.railway.app`
+URL: `https://nfx-anypoint-mq-exporter-production.up.railway.app`
 
 ## Step 2: Deploy Prometheus
 
@@ -22,7 +22,7 @@ URL: `https://anypoint-mq-prometheus-exporter-production.up.railway.app`
 2. Add env var: `PORT=9090`
 3. Set **Custom Start Command**:
    ```
-   sh -c 'printf "global:\n  scrape_interval: 60s\nscrape_configs:\n  - job_name: amq\n    metrics_path: /actuator/prometheus\n    scheme: https\n    static_configs:\n      - targets: [\"anypoint-mq-prometheus-exporter-production.up.railway.app\"]\n" > /etc/prometheus/prometheus.yml && exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.retention.time=30d --web.listen-address=:${PORT}'
+   sh -c 'printf "global:\n  scrape_interval: 60s\nscrape_configs:\n  - job_name: amq\n    metrics_path: /actuator/prometheus\n    scheme: https\n    static_configs:\n      - targets: [\"nfx-anypoint-mq-exporter-production.up.railway.app\"]\n" > /etc/prometheus/prometheus.yml && exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.retention.time=30d --web.listen-address=:${PORT}'
    ```
 4. Networking: set port to `9090`
 5. Optionally add a **Volume** at `/prometheus` for data persistence
