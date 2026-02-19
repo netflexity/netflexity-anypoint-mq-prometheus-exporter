@@ -2,65 +2,82 @@ package com.netflexity.amq.exporter.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * Represents statistics for a queue from the Anypoint MQ Stats API.
  * 
- * These statistics are collected over a time period and provide insights
- * into queue performance and message flow.
+ * The Stats API returns arrays (time-series data points) for each metric.
+ * We extract the last value from each array as the most recent reading.
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class QueueStats {
 
-    /**
-     * Queue identifier
-     */
     @JsonProperty("queueId")
     private String queueId;
 
-    /**
-     * Number of messages currently waiting in the queue
-     */
-    @JsonProperty("messagesInQueue")
     private Long messagesInQueue = 0L;
-
-    /**
-     * Number of messages currently being processed (in-flight)
-     */
-    @JsonProperty("messagesInFlight")
     private Long messagesInFlight = 0L;
-
-    /**
-     * Total number of messages sent to the queue during the period
-     */
-    @JsonProperty("messagesSent")
     private Long messagesSent = 0L;
-
-    /**
-     * Total number of messages received from the queue during the period
-     */
-    @JsonProperty("messagesReceived")
     private Long messagesReceived = 0L;
-
-    /**
-     * Total number of messages acknowledged during the period
-     */
-    @JsonProperty("messagesAcked")
     private Long messagesAcked = 0L;
-
-    /**
-     * Queue size in bytes (if available)
-     */
-    @JsonProperty("queueSize")
     private Long queueSize;
-
-    /**
-     * Average message size in bytes (if available)
-     */
-    @JsonProperty("averageMessageSize")
     private Double averageMessageSize;
+
+    // Stats API returns arrays — extract last value from each
+    @JsonSetter("messagesInQueue")
+    public void setMessagesInQueue(Object value) {
+        this.messagesInQueue = extractLong(value);
+    }
+
+    @JsonSetter("messagesInFlight")
+    public void setMessagesInFlight(Object value) {
+        this.messagesInFlight = extractLong(value);
+    }
+
+    @JsonSetter("messagesSent")
+    public void setMessagesSent(Object value) {
+        this.messagesSent = extractLong(value);
+    }
+
+    @JsonSetter("messagesReceived")
+    public void setMessagesReceived(Object value) {
+        this.messagesReceived = extractLong(value);
+    }
+
+    @JsonSetter("messagesAcked")
+    public void setMessagesAcked(Object value) {
+        this.messagesAcked = extractLong(value);
+    }
+
+    @JsonSetter("queueSize")
+    public void setQueueSize(Object value) {
+        this.queueSize = extractLong(value);
+    }
+
+    @JsonSetter("averageMessageSize")
+    public void setAverageMessageSize(Object value) {
+        if (value instanceof List<?> list && !list.isEmpty()) {
+            Object last = list.get(list.size() - 1);
+            this.averageMessageSize = last instanceof Number n ? n.doubleValue() : 0.0;
+        } else if (value instanceof Number n) {
+            this.averageMessageSize = n.doubleValue();
+        }
+    }
+
+    private static Long extractLong(Object value) {
+        if (value instanceof List<?> list && !list.isEmpty()) {
+            Object last = list.get(list.size() - 1);
+            return last instanceof Number n ? n.longValue() : 0L;
+        } else if (value instanceof Number n) {
+            return n.longValue();
+        }
+        return 0L;
+    }
 
     /**
      * Associated queue metadata (set by the collector)

@@ -2,41 +2,57 @@ package com.netflexity.amq.exporter.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * Represents statistics for an exchange from the Anypoint MQ Stats API.
  * 
- * Exchange statistics focus on message publishing and delivery patterns
- * in publish-subscribe scenarios.
+ * The Stats API returns arrays (time-series data points) for each metric.
+ * We extract the last value from each array as the most recent reading.
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ExchangeStats {
 
-    /**
-     * Exchange identifier
-     */
     @JsonProperty("exchangeId")
     private String exchangeId;
 
-    /**
-     * Total number of messages published to the exchange during the period
-     */
-    @JsonProperty("messagesPublished")
     private Long messagesPublished = 0L;
-
-    /**
-     * Total number of messages delivered from the exchange to bound queues during the period
-     */
-    @JsonProperty("messagesDelivered")
     private Long messagesDelivered = 0L;
-
-    /**
-     * Average message size in bytes (if available)
-     */
-    @JsonProperty("averageMessageSize")
     private Double averageMessageSize;
+
+    @JsonSetter("messagesPublished")
+    public void setMessagesPublished(Object value) {
+        this.messagesPublished = extractLong(value);
+    }
+
+    @JsonSetter("messagesDelivered")
+    public void setMessagesDelivered(Object value) {
+        this.messagesDelivered = extractLong(value);
+    }
+
+    @JsonSetter("averageMessageSize")
+    public void setAverageMessageSize(Object value) {
+        if (value instanceof List<?> list && !list.isEmpty()) {
+            Object last = list.get(list.size() - 1);
+            this.averageMessageSize = last instanceof Number n ? n.doubleValue() : 0.0;
+        } else if (value instanceof Number n) {
+            this.averageMessageSize = n.doubleValue();
+        }
+    }
+
+    private static Long extractLong(Object value) {
+        if (value instanceof List<?> list && !list.isEmpty()) {
+            Object last = list.get(list.size() - 1);
+            return last instanceof Number n ? n.longValue() : 0L;
+        } else if (value instanceof Number n) {
+            return n.longValue();
+        }
+        return 0L;
+    }
 
     /**
      * Associated exchange metadata (set by the collector)
