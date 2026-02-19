@@ -1,42 +1,11 @@
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 60s
+  evaluation_interval: 60s
 
-# Alertmanager configuration (optional)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets:
-#           # - alertmanager:9093
-
-# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
-# rule_files:
-#   - "alert_rules.yml"
-
-# Scrape configuration
 scrape_configs:
-  # Prometheus self-monitoring
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-    scrape_interval: 30s
-
-  # Anypoint MQ Exporter
   - job_name: 'anypoint-mq-exporter'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 60s
     static_configs:
-      - targets: ['anypoint-mq-exporter:9101']
-    scrape_interval: 60s  # Match the exporter's collection interval
-    scrape_timeout: 30s
-    metrics_path: /actuator/prometheus
-    honor_labels: false
-    params:
-      format: ['prometheus']
-
-  # Anypoint MQ Exporter Health Check
-  - job_name: 'anypoint-mq-exporter-health'
-    static_configs:
-      - targets: ['anypoint-mq-exporter:9101']
-    scrape_interval: 30s
-    scrape_timeout: 10s
-    metrics_path: /actuator/health
-    honor_labels: false
+      - targets: ['anypoint-mq-prometheus-exporter-production.up.railway.app']
+    scheme: https
