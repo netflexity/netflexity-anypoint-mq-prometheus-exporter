@@ -8,6 +8,10 @@ spring:
     name: anypoint-mq-prometheus-exporter
   main:
     lazy-initialization: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+      - org.springframework.boot.autoconfigure.mail.MailSenderValidatorAutoConfiguration
 
 management:
   endpoints:
@@ -18,6 +22,9 @@ management:
   endpoint:
     health:
       show-details: always
+  health:
+    mail:
+      enabled: false
       show-components: always
     metrics:
       enabled: true

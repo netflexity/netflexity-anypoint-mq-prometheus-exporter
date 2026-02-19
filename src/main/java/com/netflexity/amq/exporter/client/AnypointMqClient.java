@@ -158,7 +158,7 @@ public class AnypointMqClient {
                         .doOnNext(stats -> stats.setQueueId(queueId)))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError)
-                        .doBeforeRetry(retrySignal -> log.warn("Retrying get queue stats for {}, attempt {}", queueId, retrySignal.totalRetries() + 1)))
+                        .doBeforeRetry(retrySignal -> log.warn("Retrying get queue stats for {}, attempt {}: {}", queueId, retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())))
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
                 .doOnSuccess(stats -> log.debug("Successfully retrieved stats for queue {}: {}", queueId, stats != null ? stats.toSafeString() : "null"))
                 .doOnError(error -> log.error("Failed to get stats for queue {}: {}", queueId, error.getMessage()));
@@ -199,7 +199,7 @@ public class AnypointMqClient {
                         .doOnNext(stats -> stats.setExchangeId(exchangeId)))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError)
-                        .doBeforeRetry(retrySignal -> log.warn("Retrying get exchange stats for {}, attempt {}", exchangeId, retrySignal.totalRetries() + 1)))
+                        .doBeforeRetry(retrySignal -> log.warn("Retrying get exchange stats for {}, attempt {}: {}", exchangeId, retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())))
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
                 .doOnSuccess(stats -> log.debug("Successfully retrieved stats for exchange {}: {}", exchangeId, stats != null ? stats.toSafeString() : "null"))
                 .doOnError(error -> log.error("Failed to get stats for exchange {}: {}", exchangeId, error.getMessage()));
