@@ -127,12 +127,25 @@ public class EnvironmentDiscoveryService {
                     discoveredOrgs.put(rootOrg.getId(), info);
                     log.info("Discovered root org: {} ({})", rootOrg.getName(), rootOrg.getId());
                     
-                    // Add sub-orgs
+                    // Add sub-orgs from memberOfOrganizations (has actual names)
+                    if (me.getUser().getMemberOfOrganizations() != null) {
+                        for (MemberOrg memberOrg : me.getUser().getMemberOfOrganizations()) {
+                            if (!discoveredOrgs.containsKey(memberOrg.getId())) {
+                                OrgInfo subInfo = new OrgInfo(memberOrg.getId(), memberOrg.getName());
+                                orgs.add(subInfo);
+                                discoveredOrgs.put(memberOrg.getId(), subInfo);
+                                log.info("Discovered org: {} ({})", memberOrg.getName(), memberOrg.getId());
+                            }
+                        }
+                    }
+                    // Fallback: add sub-orgs by ID if not already found via memberOf
                     if (rootOrg.getSubOrganizationIds() != null) {
                         for (String subOrgId : rootOrg.getSubOrganizationIds()) {
-                            OrgInfo subInfo = new OrgInfo(subOrgId, "Sub-org " + subOrgId);
-                            orgs.add(subInfo);
-                            discoveredOrgs.put(subOrgId, subInfo);
+                            if (!discoveredOrgs.containsKey(subOrgId)) {
+                                OrgInfo subInfo = new OrgInfo(subOrgId, "Sub-org " + subOrgId);
+                                orgs.add(subInfo);
+                                discoveredOrgs.put(subOrgId, subInfo);
+                            }
                         }
                     }
                 }
