@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ public class NotificationChannelConfiguration {
     private final JavaMailSender mailSender;
 
     public NotificationChannelConfiguration(MonitorConfig monitorConfig, 
-                                           JavaMailSender mailSender) {
+                                           @Autowired(required = false) JavaMailSender mailSender) {
         this.monitorConfig = monitorConfig;
         this.mailSender = mailSender;
     }
@@ -100,6 +101,10 @@ public class NotificationChannelConfiguration {
      * Create email notification channel
      */
     private NotificationChannel createEmailChannel(MonitorConfig.ChannelConfig config) {
+        if (mailSender == null) {
+            log.warn("Email channel '{}' skipped: no mail server configured", config.getName());
+            return null;
+        }
         if (config.getTo() == null || config.getTo().trim().isEmpty()) {
             log.warn("Email channel '{}' missing recipient address", config.getName());
             return null;
@@ -107,7 +112,7 @@ public class NotificationChannelConfiguration {
 
         String fromEmail = config.getFrom();
         if (fromEmail == null || fromEmail.trim().isEmpty()) {
-            fromEmail = "noreply@netflexity.com"; // Default sender
+            fromEmail = "noreply@netflexity.com";
         }
 
         return new EmailNotificationChannel(config.getName(), config.getTo(), fromEmail, mailSender);
