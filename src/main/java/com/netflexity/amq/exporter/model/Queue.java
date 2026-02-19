@@ -112,10 +112,12 @@ public class Queue {
      * @return sanitized queue name
      */
     public String getSanitizedQueueName() {
-        if (queueName == null) {
+        // MQ Admin API uses queueId as the queue name
+        String name = queueName != null ? queueName : queueId;
+        if (name == null) {
             return "unknown";
         }
-        return queueName.replaceAll("[^a-zA-Z0-9_]", "_");
+        return name.replaceAll("[^a-zA-Z0-9_\\-]", "_");
     }
 
     @Override

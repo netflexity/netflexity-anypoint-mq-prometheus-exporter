@@ -56,10 +56,11 @@ public class Exchange {
      * @return sanitized exchange name
      */
     public String getSanitizedExchangeName() {
-        if (exchangeName == null) {
+        String name = exchangeName != null ? exchangeName : exchangeId;
+        if (name == null) {
             return "unknown";
         }
-        return exchangeName.replaceAll("[^a-zA-Z0-9_]", "_");
+        return name.replaceAll("[^a-zA-Z0-9_\\-]", "_");
     }
 
     @Override

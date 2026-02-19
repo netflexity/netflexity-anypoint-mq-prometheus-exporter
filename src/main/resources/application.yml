@@ -47,7 +47,7 @@ anypoint:
   organizationId: ${ANYPOINT_ORG_ID:}
   environments:
     - id: ${ANYPOINT_ENV_ID:}
-      name: ${ANYPOINT_ENV_NAME:Production}
+      name: ${ANYPOINT_ENV_NAME:Development}
   regions:
     - us-east-1
   scrape:
