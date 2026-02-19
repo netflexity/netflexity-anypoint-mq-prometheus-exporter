@@ -1,5 +1,5 @@
 FROM prom/prometheus:latest
-COPY prometheus/prometheus.yml /etc/prometheus/prometheus.yml
+COPY prometheus.yml /etc/prometheus/prometheus.yml
 CMD /bin/prometheus \
     --config.file=/etc/prometheus/prometheus.yml \
     --storage.tsdb.retention.time=30d \
