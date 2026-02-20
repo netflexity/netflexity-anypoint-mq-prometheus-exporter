@@ -237,6 +237,150 @@ mvn clean package -DskipTests
 java -jar target/anypoint-mq-prometheus-exporter-*.jar
 ```
 
+## Datadog Integration
+
+Already using Datadog? No problem. The exporter works with Datadog's built-in OpenMetrics check — zero additional code required.
+
+### Option A: Datadog Agent + OpenMetrics (Recommended)
+
+If the Datadog Agent runs alongside the exporter (same host, Kubernetes, or Docker network):
+
+1. **Deploy the exporter** (Docker, Railway, or standalone JAR)
+
+2. **Configure the Datadog Agent** OpenMetrics check:
+
+```yaml
+# /etc/datadog-agent/conf.d/openmetrics.d/conf.yaml
+instances:
+  - openmetrics_endpoint: http://exporter-host:9101/actuator/prometheus
+    namespace: anypoint_mq
+    metrics:
+      - anypoint_mq_queue_messages_in_queue
+      - anypoint_mq_queue_messages_in_flight
+      - anypoint_mq_queue_messages_sent
+      - anypoint_mq_queue_messages_received
+      - anypoint_mq_queue_messages_acked
+      - anypoint_mq_exchange_messages_published
+      - anypoint_mq_exchange_messages_delivered
+      - anypoint_mq_monitor_health_score
+    tags:
+      - service:anypoint-mq
+      - env:production
+```
+
+3. **Restart the Datadog Agent:**
+
+```bash
+sudo systemctl restart datadog-agent
+# or on Docker:
+docker restart dd-agent
+```
+
+4. **Verify** in Datadog → Metrics Explorer → search `anypoint_mq`
+
+All metrics appear with their full label set (`org_name`, `env_name`, `queue_name`, `region`) so you can filter, group, and alert on any dimension.
+
+### Option B: Datadog Agent on Kubernetes (Helm)
+
+Add annotations to the exporter pod:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anypoint-mq-exporter
+spec:
+  template:
+    metadata:
+      annotations:
+        ad.datadoghq.com/exporter.checks: |
+          {
+            "openmetrics": {
+              "instances": [{
+                "openmetrics_endpoint": "http://%%host%%:9101/actuator/prometheus",
+                "namespace": "anypoint_mq",
+                "metrics": ["anypoint_mq_.*"]
+              }]
+            }
+          }
+    spec:
+      containers:
+        - name: exporter
+          image: your-registry/anypoint-mq-prometheus-exporter:latest
+          ports:
+            - containerPort: 9101
+```
+
+The Datadog Agent auto-discovers the pod and starts collecting metrics.
+
+### Pre-built Datadog Dashboard
+
+Import our dashboard JSON into Datadog:
+
+1. Go to **Dashboards → New Dashboard → Import**
+2. Paste the contents of [`datadog/dashboard.json`](datadog/dashboard.json)
+
+The dashboard includes:
+- **Queue Overview** — messages in queue, in-flight, throughput per queue
+- **Exchange Overview** — publish/deliver rates per exchange
+- **Health Scores** — monitor health across all queues (Pro)
+- **Inventory** — all discovered orgs, environments, queues, and exchanges
+
+### Datadog Monitors (Alerts)
+
+Example monitor definitions you can import:
+
+```json
+{
+  "name": "Anypoint MQ - Queue Depth Critical",
+  "type": "metric alert",
+  "query": "avg(last_5m):avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name} > 10000",
+  "message": "Queue {{queue_name.name}} has {{value}} messages backed up.\n\nCheck consumer health and processing rates.\n\n@slack-mulesoft-alerts",
+  "tags": ["service:anypoint-mq", "team:integration"],
+  "options": {
+    "thresholds": { "critical": 10000, "warning": 5000 },
+    "notify_no_data": false,
+    "renotify_interval": 30
+  }
+}
+```
+
+```json
+{
+  "name": "Anypoint MQ - DLQ Growing",
+  "type": "metric alert",
+  "query": "avg(last_10m):avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*-dlq} by {queue_name} > 0",
+  "message": "Dead letter queue {{queue_name.name}} has {{value}} messages.\n\nFailed messages need investigation.\n\n@pagerduty-mulesoft",
+  "tags": ["service:anypoint-mq", "severity:high"],
+  "options": {
+    "thresholds": { "critical": 1, "warning": 0 },
+    "notify_no_data": false
+  }
+}
+```
+
+```json
+{
+  "name": "Anypoint MQ - Throughput Drop",
+  "type": "metric alert",
+  "query": "pct_change(avg(last_1h),last_1d):avg:anypoint_mq.anypoint_mq_queue_messages_received{*} by {queue_name} < -50",
+  "message": "Queue {{queue_name.name}} throughput dropped >50% vs yesterday.\n\nPossible producer or connectivity issue.\n\n@slack-mulesoft-alerts",
+  "tags": ["service:anypoint-mq"],
+  "options": {
+    "thresholds": { "critical": -50, "warning": -30 }
+  }
+}
+```
+
+### New Relic & Dynatrace
+
+Both support Prometheus remote write or OpenMetrics scraping:
+
+- **New Relic**: Use the [Prometheus remote write integration](https://docs.newrelic.com/docs/infrastructure/prometheus-integrations/install-configure-remote-write/set-your-prometheus-remote-write-integration/) — add a `remote_write` block to your Prometheus config pointing to New Relic's endpoint.
+- **Dynatrace**: Use the [OpenMetrics extension](https://www.dynatrace.com/hub/detail/prometheus/) or ActiveGate Prometheus integration to scrape the exporter directly.
+
+No changes to the exporter needed — it's standard Prometheus metrics.
+
 ## Free vs Pro
 
 | Feature | Free | Pro |

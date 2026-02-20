@@ -1,0 +1,292 @@
+{
+  "title": "Anypoint MQ - Queue & Exchange Monitoring",
+  "description": "Real-time monitoring of MuleSoft Anypoint MQ queues and exchanges via the Anypoint MQ Prometheus Exporter.",
+  "widgets": [
+    {
+      "id": 1,
+      "definition": {
+        "title": "Messages In Queue (Top 10)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "top(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name}, 10, 'mean', 'desc')"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 0, "width": 6, "height": 4 }
+    },
+    {
+      "id": 2,
+      "definition": {
+        "title": "Messages In Flight",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{*} by {queue_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "bars"
+          }
+        ]
+      },
+      "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+    },
+    {
+      "id": 3,
+      "definition": {
+        "title": "Queue Throughput - Messages Received",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{*} by {queue_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 4, "width": 4, "height": 3 }
+    },
+    {
+      "id": 4,
+      "definition": {
+        "title": "Queue Throughput - Messages Sent (Published)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{*} by {queue_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 4, "y": 4, "width": 4, "height": 3 }
+    },
+    {
+      "id": 5,
+      "definition": {
+        "title": "Messages Acknowledged",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{*} by {queue_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 8, "y": 4, "width": 4, "height": 3 }
+    },
+    {
+      "id": 6,
+      "definition": {
+        "title": "Exchange - Messages Published",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_published{*} by {exchange_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 7, "width": 6, "height": 3 }
+    },
+    {
+      "id": 7,
+      "definition": {
+        "title": "Exchange - Messages Delivered",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_delivered{*} by {exchange_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      },
+      "layout": { "x": 6, "y": 7, "width": 6, "height": 3 }
+    },
+    {
+      "id": 8,
+      "definition": {
+        "title": "Queue Inventory",
+        "type": "query_table",
+        "requests": [
+          {
+            "formulas": [
+              { "formula": "query1", "alias": "In Queue" },
+              { "formula": "query2", "alias": "In Flight" },
+              { "formula": "query3", "alias": "Received" }
+            ],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name,env_name,org_name}",
+                "aggregator": "last"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{*} by {queue_name,env_name,org_name}",
+                "aggregator": "last"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query3",
+                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{*} by {queue_name,env_name,org_name}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 10, "width": 12, "height": 4 }
+    },
+    {
+      "id": 9,
+      "definition": {
+        "title": "Health Scores (Pro)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:anypoint_mq.anypoint_mq_monitor_health_score{*} by {queue_name}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line",
+            "style": {
+              "palette": "green_to_red"
+            }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 14, "width": 6, "height": 3 }
+    },
+    {
+      "id": 10,
+      "definition": {
+        "title": "DLQ Messages",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*-dlq}",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "precision": 0
+      },
+      "layout": { "x": 6, "y": 14, "width": 3, "height": 3 }
+    },
+    {
+      "id": 11,
+      "definition": {
+        "title": "Total Queues Monitored",
+        "type": "query_value",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "count_nonzero(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name})",
+                "aggregator": "last"
+              }
+            ],
+            "response_format": "scalar"
+          }
+        ],
+        "precision": 0
+      },
+      "layout": { "x": 9, "y": 14, "width": 3, "height": 3 }
+    }
+  ],
+  "template_variables": [
+    {
+      "name": "org_name",
+      "prefix": "org_name",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "env_name",
+      "prefix": "env_name",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "queue_name",
+      "prefix": "queue_name",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
+  "layout_type": "ordered",
+  "notify_list": [],
+  "reflow_type": "fixed"
+}
