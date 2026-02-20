@@ -9,3 +9,10 @@ scrape_configs:
     static_configs:
       - targets: ['nfx-anypoint-mq-exporter-production.up.railway.app']
     scheme: https
+
+  - job_name: 'anypoint-metrics-exporter'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 120s
+    static_configs:
+      - targets: ['METRICS_EXPORTER_HOST.up.railway.app']
+    scheme: https
