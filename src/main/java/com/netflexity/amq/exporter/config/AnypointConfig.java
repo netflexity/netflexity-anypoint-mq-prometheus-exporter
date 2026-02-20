@@ -59,7 +59,7 @@ public class AnypointConfig {
     /**
      * List of regions to monitor (e.g., us-east-1, us-west-2)
      */
-    @NotEmpty
+    
     private List<String> regions;
 
     /**
@@ -127,13 +127,13 @@ public class AnypointConfig {
         /**
          * Environment ID (UUID)
          */
-        @NotEmpty
+        
         private String id;
 
         /**
          * Environment name for labeling
          */
-        @NotEmpty
+        
         private String name;
     }
 
