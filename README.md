@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">Anypoint MQ Prometheus Exporter</h1>
   <p align="center">
-    Real-time metrics & monitoring for MuleSoft Anypoint MQ — auto-discovers every org, environment, queue, and exchange.
+    Real-time metrics and monitoring for MuleSoft Anypoint MQ - auto-discovers every org, environment, queue, and exchange.
   </p>
 </p>
 
@@ -17,7 +17,7 @@
 
 ## Overview
 
-A turnkey Prometheus exporter for **MuleSoft Anypoint MQ**. Point it at your Anypoint Platform Connected App credentials and it will automatically discover all organizations, environments, queues, and exchanges — then expose production-grade metrics at `/actuator/prometheus`.
+A turnkey Prometheus exporter for **MuleSoft Anypoint MQ**. Point it at your Anypoint Platform Connected App credentials and it will automatically discover all organizations, environments, queues, and exchanges - then expose production-grade metrics at `/actuator/prometheus`.
 
 No manual configuration of queue names. No YAML lists to maintain. It just works.
 
@@ -65,15 +65,15 @@ No manual configuration of queue names. No YAML lists to maintain. It just works
 
 ## Features
 
-- **Zero-Config Discovery** — Automatically finds all orgs, environments, queues, and exchanges. Refreshes every 5 minutes.
-- **Prometheus-Native** — Standard `/actuator/prometheus` endpoint via Micrometer. Drop-in compatible with any Prometheus scraper.
-- **Pre-Built Grafana Dashboards** — Queue depth, throughput, exchange activity, inventory table — ready to import.
-- **Multi-Org Support** — Monitor queues across every organization and environment your Connected App can access.
-- **Advanced Monitors (Pro)** — Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
-- **Multi-Channel Alerting (Pro)** — Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
-- **Works Everywhere** — Grafana, Datadog, New Relic, Dynatrace — anything that scrapes Prometheus metrics.
-- **Docker Compose Included** — Full stack (Exporter + Prometheus + Grafana) in one command.
-- **Railway-Ready** — Deploys as 3 Railway services for ~$15/month. [Setup guide →](RAILWAY-SETUP.md)
+- **Zero-Config Discovery** - Automatically finds all orgs, environments, queues, and exchanges. Refreshes every 5 minutes.
+- **Prometheus-Native** - Standard `/actuator/prometheus` endpoint via Micrometer. Drop-in compatible with any Prometheus scraper.
+- **Pre-Built Grafana Dashboards** - Queue depth, throughput, exchange activity, inventory table - ready to import.
+- **Multi-Org Support** - Monitor queues across every organization and environment your Connected App can access.
+- **Advanced Monitors (Pro)** - Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
+- **Multi-Channel Alerting (Pro)** - Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
+- **Works Everywhere** - Grafana, Datadog, New Relic, Dynatrace - anything that scrapes Prometheus metrics.
+- **Docker Compose Included** - Full stack (Exporter + Prometheus + Grafana) in one command.
+- **Railway-Ready** - Deploys as 3 Railway services for ~$15/month. [Setup guide →](RAILWAY-SETUP.md)
 
 ## Quick Start
 
@@ -151,8 +151,8 @@ All settings can be overridden via environment variables or `application.yml`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ANYPOINT_CLIENT_ID` | — | Connected App client ID (**required**) |
-| `ANYPOINT_CLIENT_SECRET` | — | Connected App client secret (**required**) |
+| `ANYPOINT_CLIENT_ID` | - | Connected App client ID (**required**) |
+| `ANYPOINT_CLIENT_SECRET` | - | Connected App client secret (**required**) |
 | `ANYPOINT_AUTO_DISCOVERY` | `true` | Auto-discover all orgs and environments |
 | `ANYPOINT_ORG_ID` | *(auto)* | Root organization ID (auto-discovered if omitted) |
 | `ANYPOINT_REGIONS` | `us-east-1` | Comma-separated MQ regions to scrape |
@@ -179,7 +179,7 @@ All settings can be overridden via environment variables or `application.yml`.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ANYPOINT_MONITORS_ENABLED` | `true` | Enable health scores and alerting |
-| `ANYPOINT_LICENSE_KEY` | — | Pro license key for monitors module |
+| `ANYPOINT_LICENSE_KEY` | - | Pro license key for monitors module |
 | `anypoint.monitors.evaluationIntervalSeconds` | `60` | Monitor evaluation frequency |
 | `anypoint.monitors.defaults.cooldownMinutes` | `15` | Alert cooldown to prevent notification storms |
 
@@ -188,20 +188,20 @@ All settings can be overridden via environment variables or `application.yml`.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SLACK_ENABLED` | `false` | Enable Slack notifications |
-| `SLACK_WEBHOOK_URL` | — | Slack incoming webhook URL |
+| `SLACK_WEBHOOK_URL` | - | Slack incoming webhook URL |
 | `PAGERDUTY_ENABLED` | `false` | Enable PagerDuty notifications |
-| `PAGERDUTY_ROUTING_KEY` | — | PagerDuty Events API routing key |
+| `PAGERDUTY_ROUTING_KEY` | - | PagerDuty Events API routing key |
 | `EMAIL_ENABLED` | `false` | Enable email notifications |
-| `ALERT_EMAIL_TO` | — | Recipient email address |
+| `ALERT_EMAIL_TO` | - | Recipient email address |
 | `TEAMS_ENABLED` | `false` | Enable Microsoft Teams notifications |
-| `TEAMS_WEBHOOK_URL` | — | Teams incoming webhook URL |
+| `TEAMS_WEBHOOK_URL` | - | Teams incoming webhook URL |
 | `WEBHOOK_ENABLED` | `false` | Enable generic webhook notifications |
-| `WEBHOOK_URL` | — | Webhook endpoint URL |
-| `WEBHOOK_TOKEN` | — | Bearer token for webhook auth |
+| `WEBHOOK_URL` | - | Webhook endpoint URL |
+| `WEBHOOK_TOKEN` | - | Bearer token for webhook auth |
 
 ## Screenshots
 
-> 📸 *Coming soon — Grafana dashboard screenshots will be added here.*
+> 📸 *Coming soon - Grafana dashboard screenshots will be added here.*
 
 <!--
 ![Dashboard Overview](docs/screenshots/dashboard-overview.png)
@@ -239,7 +239,7 @@ java -jar target/anypoint-mq-prometheus-exporter-*.jar
 
 ## Datadog Integration
 
-Already using Datadog? No problem. The exporter works with Datadog's built-in OpenMetrics check — zero additional code required.
+Already using Datadog? No problem. The exporter works with Datadog's built-in OpenMetrics check - zero additional code required.
 
 ### Option A: Datadog Agent + OpenMetrics (Recommended)
 
@@ -321,10 +321,10 @@ Import our dashboard JSON into Datadog:
 2. Paste the contents of [`datadog/dashboard.json`](datadog/dashboard.json)
 
 The dashboard includes:
-- **Queue Overview** — messages in queue, in-flight, throughput per queue
-- **Exchange Overview** — publish/deliver rates per exchange
-- **Health Scores** — monitor health across all queues (Pro)
-- **Inventory** — all discovered orgs, environments, queues, and exchanges
+- **Queue Overview** - messages in queue, in-flight, throughput per queue
+- **Exchange Overview** - publish/deliver rates per exchange
+- **Health Scores** - monitor health across all queues (Pro)
+- **Inventory** - all discovered orgs, environments, queues, and exchanges
 
 ### Datadog Monitors (Alerts)
 
@@ -376,10 +376,10 @@ Example monitor definitions you can import:
 
 Both support Prometheus remote write or OpenMetrics scraping:
 
-- **New Relic**: Use the [Prometheus remote write integration](https://docs.newrelic.com/docs/infrastructure/prometheus-integrations/install-configure-remote-write/set-your-prometheus-remote-write-integration/) — add a `remote_write` block to your Prometheus config pointing to New Relic's endpoint.
+- **New Relic**: Use the [Prometheus remote write integration](https://docs.newrelic.com/docs/infrastructure/prometheus-integrations/install-configure-remote-write/set-your-prometheus-remote-write-integration/) - add a `remote_write` block to your Prometheus config pointing to New Relic's endpoint.
 - **Dynatrace**: Use the [OpenMetrics extension](https://www.dynatrace.com/hub/detail/prometheus/) or ActiveGate Prometheus integration to scrape the exporter directly.
 
-No changes to the exporter needed — it's standard Prometheus metrics.
+No changes to the exporter needed - it's standard Prometheus metrics.
 
 ## Free vs Pro
 
@@ -389,11 +389,24 @@ No changes to the exporter needed — it's standard Prometheus metrics.
 | Auto-discovery | ✅ | ✅ |
 | Prometheus endpoint | ✅ | ✅ |
 | Grafana dashboards | ✅ | ✅ |
-| Health scores | — | ✅ |
-| Queue depth monitors | — | ✅ |
-| DLQ alerting | — | ✅ |
-| Throughput anomaly detection | — | ✅ |
-| Multi-channel notifications | — | ✅ |
+| Health scores | - | ✅ |
+| Queue depth monitors | - | ✅ |
+| DLQ alerting | - | ✅ |
+| Throughput anomaly detection | - | ✅ |
+| Multi-channel notifications | - | ✅ |
+
+## Shared Library
+
+This exporter shares its core infrastructure (authentication, discovery, monitoring framework, and notification channels) with the [Anypoint Metrics Prometheus Exporter](https://bitbucket.org/netflexity/anypoint-metrics-prometheus-exporter) via the [`anypoint-common`](https://bitbucket.org/netflexity/netflexity-anypoint-common) library.
+
+The common library provides:
+- **OAuth2 authentication** (Connected App + username/password) with token caching
+- **Environment auto-discovery** from Anypoint Platform
+- **Monitor evaluation engine** (queue depth, DLQ, throughput anomalies, health scores)
+- **5 notification channels** (Slack, PagerDuty, Email, Teams, Webhook)
+- **REST API controllers** (`/api/status`, `/api/monitors`, `/api/health-scores`)
+- **Spring Boot Actuator health indicator** for Anypoint connectivity
+- **License gating** (FREE/PRO tier feature control)
 
 ## Contributing
 
@@ -407,7 +420,7 @@ Contributions are welcome! Please:
 
 ## License
 
-This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 ---
 
