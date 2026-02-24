@@ -13,7 +13,6 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": null,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -25,7 +24,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -45,7 +44,7 @@
       "targets": [{ "expr": "count(anypoint_mq_queue)", "legendFormat": "Queues" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -65,7 +64,7 @@
       "targets": [{ "expr": "sum(anypoint_mq_queue_messages_in_queue)", "legendFormat": "In Queue" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -85,7 +84,7 @@
       "targets": [{ "expr": "sum(anypoint_mq_queue_messages_in_flight)", "legendFormat": "In Flight" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -110,7 +109,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -127,7 +126,7 @@
       "targets": [{ "expr": "anypoint_mq_queue_messages_in_queue{environment=~\"$environment\", queue_name=~\"$queue\"}", "legendFormat": "{{environment}} / {{queue_name}}" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -151,7 +150,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -167,7 +166,7 @@
       "targets": [{ "expr": "anypoint_mq_queue_messages_sent{environment=~\"$environment\", queue_name=~\"$queue\"}", "legendFormat": "{{environment}} / {{queue_name}}" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -183,7 +182,7 @@
       "targets": [{ "expr": "anypoint_mq_queue_messages_received{environment=~\"$environment\", queue_name=~\"$queue\"}", "legendFormat": "{{environment}} / {{queue_name}}" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -206,7 +205,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -222,7 +221,7 @@
       "targets": [{ "expr": "anypoint_mq_exchange_messages_published{environment=~\"$environment\"}", "legendFormat": "{{environment}} / {{exchange_name}}" }]
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -245,7 +244,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -276,7 +275,7 @@
       "type": "row"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "thresholds" },
@@ -290,6 +289,231 @@
       "title": "Last Scrape",
       "type": "stat",
       "targets": [{ "expr": "anypoint_mq_last_scrape_timestamp_seconds * 1000", "legendFormat": "Last Scrape" }]
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 },
+      "id": 200,
+      "title": "🚨 Alert Rules",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
+      "description": "Fires when any dead letter queue has messages sitting in it for more than 5 minutes. Indicates failed message processing that needs investigation.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "spanNulls": true, "showPoints": "never" },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 57 },
+      "id": 201,
+      "alert": {
+        "name": "Dead Letter Queue Growth",
+        "conditions": [
+          {
+            "evaluator": { "params": [0], "type": "gt" },
+            "operator": { "type": "and" },
+            "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "params": [], "type": "last" },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "5m",
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "notifications": [],
+        "message": "Dead letter queue {{ $labels.queue_name }} in {{ $labels.environment }} has {{ $value }} messages. Failed messages need immediate investigation.",
+        "alertRuleTags": { "severity": "critical" }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "title": "🔴 Dead Letter Queue Messages",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "anypoint_mq_queue_messages_in_queue{queue_name=~\".*dead.*|.*dlq.*|.*DLQ.*\"}",
+          "legendFormat": "{{ environment }} / {{ queue_name }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
+      "description": "Fires when any queue has more than 1000 messages for 10 minutes. May indicate consumer issues or traffic spike.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "spanNulls": true, "showPoints": "never" },
+          "unit": "short",
+          "thresholds": { "steps": [
+            { "color": "green", "value": null },
+            { "color": "red", "value": 1000 }
+          ]}
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 57 },
+      "id": 202,
+      "alert": {
+        "name": "Queue Depth Spike",
+        "conditions": [
+          {
+            "evaluator": { "params": [1000], "type": "gt" },
+            "operator": { "type": "and" },
+            "query": { "params": ["A", "10m", "now"] },
+            "reducer": { "params": [], "type": "last" },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "10m",
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "notifications": [],
+        "message": "Queue {{ $labels.queue_name }} in {{ $labels.environment }} has {{ $value }} messages (threshold: 1000). Check consumer health.",
+        "alertRuleTags": { "severity": "warning" }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "title": "🟡 Queue Depth Spike",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "anypoint_mq_queue_messages_in_queue",
+          "legendFormat": "{{ environment }} / {{ queue_name }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
+      "description": "Fires when in-flight messages exceed 500 for 5 minutes. Consumers may be struggling to process messages.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "spanNulls": true, "showPoints": "never" },
+          "unit": "short",
+          "thresholds": { "steps": [
+            { "color": "green", "value": null },
+            { "color": "orange", "value": 500 }
+          ]}
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 63 },
+      "id": 203,
+      "alert": {
+        "name": "High In-Flight Messages",
+        "conditions": [
+          {
+            "evaluator": { "params": [500], "type": "gt" },
+            "operator": { "type": "and" },
+            "query": { "params": ["A", "5m", "now"] },
+            "reducer": { "params": [], "type": "last" },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "5m",
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "notifications": [],
+        "message": "Queue {{ $labels.queue_name }} has {{ $value }} in-flight messages (threshold: 500). Consumers may be struggling.",
+        "alertRuleTags": { "severity": "warning" }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "title": "🟡 High In-Flight Messages",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "anypoint_mq_queue_messages_in_flight",
+          "legendFormat": "{{ environment }} / {{ queue_name }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
+      "description": "Fires when a queue has messages but zero acknowledgments for 30 minutes. No consumers may be processing.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "spanNulls": true, "showPoints": "never" },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 63 },
+      "id": 204,
+      "alert": {
+        "name": "Stale Queue - No Consumer Activity",
+        "conditions": [
+          {
+            "evaluator": { "params": [0], "type": "gt" },
+            "operator": { "type": "and" },
+            "query": { "params": ["A", "30m", "now"] },
+            "reducer": { "params": [], "type": "last" },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "30m",
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "notifications": [],
+        "message": "Queue {{ $labels.queue_name }} has messages but no acknowledgments for 30 minutes. Check if consumers are running.",
+        "alertRuleTags": { "severity": "warning" }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "title": "🟡 Stale Queue (Messages, No Acks)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "anypoint_mq_queue_messages_in_queue > 0 and anypoint_mq_queue_messages_acked == 0",
+          "legendFormat": "{{ environment }} / {{ queue_name }}"
+        }
+      ]
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
+      "description": "Fires when the exporter encounters scrape errors in the last 15 minutes.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "spanNulls": true, "showPoints": "never" },
+          "unit": "short"
+        }
+      },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 69 },
+      "id": 205,
+      "alert": {
+        "name": "Exporter Scrape Errors",
+        "conditions": [
+          {
+            "evaluator": { "params": [0], "type": "gt" },
+            "operator": { "type": "and" },
+            "query": { "params": ["A", "15m", "now"] },
+            "reducer": { "params": [], "type": "last" },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "5m",
+        "frequency": "1m",
+        "noDataState": "no_data",
+        "notifications": [],
+        "message": "Anypoint MQ exporter is experiencing scrape errors. Check exporter logs and Anypoint Platform connectivity.",
+        "alertRuleTags": { "severity": "info" }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "title": "ℹ️ Scrape Errors",
+      "type": "timeseries",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "increase(anypoint_mq_scrape_errors_total[15m])",
+          "legendFormat": "Scrape Errors"
+        }
+      ]
     }
   ],
   "refresh": "1m",
@@ -300,7 +524,7 @@
       {
         "allValue": ".*",
         "current": { "selected": true, "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
         "definition": "label_values(anypoint_mq_queue, environment)",
         "includeAll": true,
         "multi": true,
@@ -312,7 +536,7 @@
       {
         "allValue": ".*",
         "current": { "selected": true, "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "datasource": { "type": "prometheus", "uid": "dfdqchu07xl34f" },
         "definition": "label_values(anypoint_mq_queue_messages_in_queue{environment=~\"$environment\"}, queue_name)",
         "includeAll": true,
         "multi": true,

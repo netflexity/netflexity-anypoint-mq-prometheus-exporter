@@ -67,7 +67,7 @@ No manual configuration of queue names. No YAML lists to maintain. It just works
 
 - **Zero-Config Discovery** - Automatically finds all orgs, environments, queues, and exchanges. Refreshes every 5 minutes.
 - **Prometheus-Native** - Standard `/actuator/prometheus` endpoint via Micrometer. Drop-in compatible with any Prometheus scraper.
-- **Pre-Built Grafana Dashboards** - Queue depth, throughput, exchange activity, inventory table - ready to import.
+- **Pre-Built Grafana Dashboards** - Queue depth, throughput, exchange activity, inventory table, and 5 pre-configured alert rules - ready to import.
 - **Multi-Org Support** - Monitor queues across every organization and environment your Connected App can access.
 - **Advanced Monitors (Pro)** - Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
 - **Multi-Channel Alerting (Pro)** - Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
@@ -328,6 +328,8 @@ The dashboard includes:
 
 ### Datadog Monitors (Alerts)
 
+See [`datadog/README.md`](datadog/README.md) for 5 production-ready monitor definitions with full JSON snippets, bulk import scripts, and notification routing guidance (Slack, PagerDuty, email).
+
 Example monitor definitions you can import:
 
 ```json
@@ -427,3 +429,21 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 <p align="center">
   Built by <a href="https://netflexity.com">Netflexity</a> · Powered by <a href="https://spring.io/projects/spring-boot">Spring Boot</a> & <a href="https://micrometer.io/">Micrometer</a>
 </p>
+
+### Alert Rules
+
+Pre-configured Grafana alert rules are included. Import with one command:
+
+```bash
+./grafana/alerts/import-alerts.sh <GRAFANA_URL> <PROMETHEUS_DATASOURCE_UID> [admin] [password]
+```
+
+**Included alerts:**
+| Alert | Threshold | Duration | Severity |
+|-------|-----------|----------|----------|
+| Dead Letter Queue Growth | Messages > 0 | 5 min | Critical |
+| Queue Depth Spike | Messages > 1000 | 10 min | Warning |
+| High In-Flight Messages | In-flight > 500 | 5 min | Warning |
+| Scrape Errors | Errors increasing | 5 min | Info |
+
+Configure notifications under **Alerting → Contact points** in Grafana (Slack, email, PagerDuty, etc.).

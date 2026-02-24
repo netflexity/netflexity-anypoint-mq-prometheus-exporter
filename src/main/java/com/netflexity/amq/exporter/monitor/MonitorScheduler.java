@@ -68,8 +68,16 @@ public class MonitorScheduler {
                 .description("Total number of monitor notifications sent")
                 .register(meterRegistry);
 
-        log.info("MonitorScheduler initialized with {} monitor definitions",
-                monitorConfig.getEnabledDefinitions().size());
+        try {
+            int definitionCount = monitorConfig.getEnabledDefinitions().size();
+            if (licenseService.hasValidLicense()) {
+                log.info("MonitorScheduler initialized with {} monitor definitions", definitionCount);
+            } else {
+                log.info("MonitorScheduler initialized ({} definitions configured, inactive — no PRO license)", definitionCount);
+            }
+        } catch (Exception e) {
+            log.warn("MonitorScheduler initialized but could not load monitor definitions: {}", e.getMessage());
+        }
     }
 
     /**
