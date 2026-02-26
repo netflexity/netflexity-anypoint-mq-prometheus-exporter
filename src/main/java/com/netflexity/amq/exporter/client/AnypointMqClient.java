@@ -71,12 +71,24 @@ public class AnypointMqClient {
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
                         .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "list queues"))
-                        .bodyToMono(new ParameterizedTypeReference<List<Queue>>() {})
+                        .bodyToMono(String.class)
+                        .doOnNext(raw -> log.info("Raw destinations response: {}", raw))
+                        .map(raw -> {
+                            try {
+                                return new com.fasterxml.jackson.databind.ObjectMapper()
+                                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                                    .readValue(raw, new com.fasterxml.jackson.core.type.TypeReference<List<Queue>>() {});
+                            } catch (Exception e) {
+                                log.error("Failed to parse destinations: {}", e.getMessage());
+                                return java.util.Collections.<Queue>emptyList();
+                            }
+                        })
                         .flatMapMany(Flux::fromIterable)
                         .filter(queue -> queue.getQueueId() != null && !"exchange".equalsIgnoreCase(queue.getType()))
                         .doOnNext(queue -> {
                             queue.setRegion(region);
                             queue.setEnvironment(environmentId);
+                            log.info("Queue {} - messagesInQueue={}, messagesInFlight={}", queue.getQueueId(), queue.getMessagesInQueue(), queue.getMessagesInFlight());
                         }))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError)
@@ -130,7 +142,7 @@ public class AnypointMqClient {
     public Mono<QueueStats> getQueueDepth(String environmentId, String region, String queueId) {
         log.debug("Getting real-time depth for queue {} in environment {} region {}", queueId, environmentId, region);
         
-        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s",
+        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations/queues/%s",
                 anypointConfig.getBaseUrl(),
                 anypointConfig.getOrganizationId(),
                 environmentId,
