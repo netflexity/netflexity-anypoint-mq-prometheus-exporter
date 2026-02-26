@@ -16,10 +16,14 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Client for interacting with Anypoint MQ Admin and Stats APIs.
@@ -71,24 +75,12 @@ public class AnypointMqClient {
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
                         .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "list queues"))
-                        .bodyToMono(String.class)
-                        .doOnNext(raw -> log.info("Raw destinations response: {}", raw))
-                        .map(raw -> {
-                            try {
-                                return new com.fasterxml.jackson.databind.ObjectMapper()
-                                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                                    .readValue(raw, new com.fasterxml.jackson.core.type.TypeReference<List<Queue>>() {});
-                            } catch (Exception e) {
-                                log.error("Failed to parse destinations: {}", e.getMessage());
-                                return java.util.Collections.<Queue>emptyList();
-                            }
-                        })
+                        .bodyToMono(new ParameterizedTypeReference<List<Queue>>() {})
                         .flatMapMany(Flux::fromIterable)
                         .filter(queue -> queue.getQueueId() != null && !"exchange".equalsIgnoreCase(queue.getType()))
                         .doOnNext(queue -> {
                             queue.setRegion(region);
                             queue.setEnvironment(environmentId);
-                            log.info("Queue {} - messagesInQueue={}, messagesInFlight={}", queue.getQueueId(), queue.getMessagesInQueue(), queue.getMessagesInFlight());
                         }))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError)
@@ -136,42 +128,58 @@ public class AnypointMqClient {
     }
 
     /**
-     * Get real-time queue depth from Admin API (no lag).
-     * Returns messagesInQueue and messagesInFlight directly.
+     * Get real-time queue depth for multiple queues in a single API call.
+     * Uses Stats API batch endpoint: /queues?destinationIds=q1,q2,q3
+     * Returns map of queueId -> QueueStats with real-time messages/inflightMessages.
      */
-    public Mono<QueueStats> getQueueDepth(String environmentId, String region, String queueId) {
-        log.debug("Getting real-time depth for queue {} in environment {} region {}", queueId, environmentId, region);
+    public Mono<Map<String, QueueStats>> getBatchQueueDepth(String environmentId, String region, List<String> queueIds) {
+        if (queueIds == null || queueIds.isEmpty()) {
+            return Mono.just(java.util.Collections.emptyMap());
+        }
         
-        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations/queues/%s",
+        String destinationIds = queueIds.stream()
+                .map(id -> URLEncoder.encode(id, StandardCharsets.UTF_8))
+                .collect(Collectors.joining(","));
+        
+        String url = String.format("%s/mq/stats/api/v1/organizations/%s/environments/%s/regions/%s/queues?destinationIds=%s",
                 anypointConfig.getBaseUrl(),
                 anypointConfig.getOrganizationId(),
                 environmentId,
                 region,
-                queueId);
+                destinationIds);
+
+        log.debug("Getting batch queue depth for {} queues in environment {} region {}", queueIds.size(), environmentId, region);
 
         return authClient.getAccessToken()
                 .flatMap(token -> webClient.get()
                         .uri(url)
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
-                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get queue depth for " + queueId))
-                        .bodyToMono(java.util.Map.class)
-                        .map(body -> {
-                            QueueStats stats = new QueueStats();
-                            stats.setQueueId(queueId);
-                            Object inQueue = body.get("messagesInQueue");
-                            Object inFlight = body.get("messagesInFlight");
-                            if (inQueue instanceof Number) stats.setMessagesInQueue(((Number) inQueue).longValue());
-                            if (inFlight instanceof Number) stats.setMessagesInFlight(((Number) inFlight).longValue());
-                            return stats;
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "batch queue depth"))
+                        .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                        .map(list -> {
+                            Map<String, QueueStats> result = new java.util.HashMap<>();
+                            for (Map<String, Object> entry : list) {
+                                String destination = (String) entry.get("destination");
+                                if (destination == null) continue;
+                                QueueStats stats = new QueueStats();
+                                stats.setQueueId(destination);
+                                Object messages = entry.get("messages");
+                                Object inflight = entry.get("inflightMessages");
+                                if (messages instanceof Number) stats.setMessagesInQueue(((Number) messages).longValue());
+                                if (inflight instanceof Number) stats.setMessagesInFlight(((Number) inflight).longValue());
+                                result.put(destination, stats);
+                                log.debug("Real-time depth for queue {}: messages={}, inflight={}", destination, messages, inflight);
+                            }
+                            return result;
                         }))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError))
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
-                .doOnSuccess(stats -> log.debug("Real-time depth for queue {}: inQueue={}, inFlight={}", queueId,
-                        stats != null ? stats.getMessagesInQueue() : "null",
-                        stats != null ? stats.getMessagesInFlight() : "null"))
-                .doOnError(error -> log.error("Failed to get depth for queue {}: {}", queueId, error.getMessage()));
+                .onErrorResume(error -> {
+                    log.error("Failed to get batch queue depth: {}", error.getMessage());
+                    return Mono.just(java.util.Collections.emptyMap());
+                });
     }
 
     /**

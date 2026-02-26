@@ -139,17 +139,32 @@ public class MqMetricsCollector {
     }
 
     /**
-     * Collect queue metrics for an environment and region
+     * Collect queue metrics for an environment and region.
+     * 1. List all queues (Admin API)
+     * 2. Batch-fetch real-time depth for all queues (Stats API ?destinationIds=)
+     * 3. Per-queue: get throughput stats and merge with real-time depth
      */
     private Mono<Void> collectQueueMetrics(AnypointConfig.Environment environment, String region) {
         return mqClient.listQueues(environment.getId(), region)
-                .flatMap(queue -> collectSingleQueueMetrics(queue, environment.getName())
-                        .onErrorResume(error -> {
-                            exporterMetrics.incrementErrorCounter("queue_stats_failed");
-                            log.warn("Failed to collect stats for queue {}: {}", queue.getQueueName(), error.getMessage());
-                            return Mono.empty();
-                        }))
-                .then()
+                .collectList()
+                .flatMap(queues -> {
+                    if (queues.isEmpty()) return Mono.empty();
+                    
+                    // Batch-fetch real-time depth for all queues in one call
+                    java.util.List<String> queueIds = queues.stream()
+                            .map(Queue::getQueueId)
+                            .collect(java.util.stream.Collectors.toList());
+                    
+                    return mqClient.getBatchQueueDepth(environment.getId(), region, queueIds)
+                            .flatMap(depthMap -> Flux.fromIterable(queues)
+                                    .flatMap(queue -> collectSingleQueueMetrics(queue, environment.getName(), depthMap)
+                                            .onErrorResume(error -> {
+                                                exporterMetrics.incrementErrorCounter("queue_stats_failed");
+                                                log.warn("Failed to collect stats for queue {}: {}", queue.getQueueName(), error.getMessage());
+                                                return Mono.empty();
+                                            }))
+                                    .then());
+                })
                 .doOnError(error -> {
                     exporterMetrics.incrementErrorCounter("queue_list_failed");
                     log.warn("Failed to list queues for environment {} in region {}: {}", environment.getName(), region, error.getMessage());
@@ -158,18 +173,16 @@ public class MqMetricsCollector {
 
     /**
      * Collect metrics for a single queue.
-     * Real-time depth (messagesInQueue, messagesInFlight) comes from the Admin API
-     * list response (already on the Queue object). Stats API provides throughput.
+     * Merges real-time depth from batch call with throughput from per-queue Stats API.
      */
-    private Mono<Void> collectSingleQueueMetrics(Queue queue, String environmentName) {
+    private Mono<Void> collectSingleQueueMetrics(Queue queue, String environmentName, java.util.Map<String, QueueStats> depthMap) {
         return mqClient.getQueueStats(queue.getEnvironment(), queue.getRegion(), queue.getQueueId(), anypointConfig.getScrape().getPeriodSeconds())
                 .doOnNext(stats -> {
-                    // Override stats API depth with real-time depth from Admin API list
-                    if (queue.getMessagesInQueue() != null) {
-                        stats.setMessagesInQueue(queue.getMessagesInQueue());
-                    }
-                    if (queue.getMessagesInFlight() != null) {
-                        stats.setMessagesInFlight(queue.getMessagesInFlight());
+                    // Override with real-time depth from batch call
+                    QueueStats depth = depthMap.get(queue.getQueueId());
+                    if (depth != null) {
+                        stats.setMessagesInQueue(depth.getMessagesInQueue());
+                        stats.setMessagesInFlight(depth.getMessagesInFlight());
                     }
                     stats.setQueue(queue);
                     updateQueueMetrics(stats, environmentName);
