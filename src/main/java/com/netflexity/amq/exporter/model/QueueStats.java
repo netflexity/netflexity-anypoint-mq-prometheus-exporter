@@ -69,10 +69,18 @@ public class QueueStats {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static Long extractLong(Object value) {
         if (value instanceof List<?> list && !list.isEmpty()) {
             Object last = list.get(list.size() - 1);
-            return last instanceof Number n ? n.longValue() : 0L;
+            if (last instanceof Number n) {
+                return n.longValue();
+            } else if (last instanceof java.util.Map) {
+                // Stats API returns [{date: "...", value: N}, ...] format
+                Object v = ((java.util.Map<String, Object>) last).get("value");
+                return v instanceof Number n ? n.longValue() : 0L;
+            }
+            return 0L;
         } else if (value instanceof Number n) {
             return n.longValue();
         }
