@@ -26,12 +26,16 @@ public class ExchangeStats {
 
     @JsonSetter("messagesPublished")
     public void setMessagesPublished(Object value) {
+        System.out.println("DEBUG messagesPublished raw: " + value + " class: " + (value != null ? value.getClass().getName() : "null"));
         this.messagesPublished = extractLong(value);
+        System.out.println("DEBUG messagesPublished extracted: " + this.messagesPublished);
     }
 
     @JsonSetter("messagesDelivered")
     public void setMessagesDelivered(Object value) {
+        System.out.println("DEBUG messagesDelivered raw: " + value + " class: " + (value != null ? value.getClass().getName() : "null"));
         this.messagesDelivered = extractLong(value);
+        System.out.println("DEBUG messagesDelivered extracted: " + this.messagesDelivered);
     }
 
     @SuppressWarnings("unchecked")
