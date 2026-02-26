@@ -130,7 +130,7 @@ public class AnypointMqClient {
     public Mono<QueueStats> getQueueDepth(String environmentId, String region, String queueId) {
         log.debug("Getting real-time depth for queue {} in environment {} region {}", queueId, environmentId, region);
         
-        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/queues/%s",
+        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s",
                 anypointConfig.getBaseUrl(),
                 anypointConfig.getOrganizationId(),
                 environmentId,
