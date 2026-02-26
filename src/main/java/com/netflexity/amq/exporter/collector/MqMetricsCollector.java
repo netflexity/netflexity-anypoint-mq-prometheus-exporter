@@ -1,9 +1,11 @@
 package com.netflexity.amq.exporter.collector;
 
 import com.netflexity.amq.exporter.client.AnypointMqClient;
-import com.netflexity.amq.exporter.config.AnypointConfig;
-import com.netflexity.amq.exporter.config.ExporterConfig;
+import com.netflexity.anypoint.common.config.AnypointConfig;
+import com.netflexity.anypoint.common.config.ExporterConfig;
 import com.netflexity.amq.exporter.model.*;
+import com.netflexity.anypoint.common.model.Queue;
+import com.netflexity.anypoint.common.model.QueueStats;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
