@@ -194,8 +194,10 @@ public class AnypointMqClient {
     public Mono<QueueStats> getQueueStats(String environmentId, String region, String queueId, int periodSeconds) {
         log.debug("Getting stats for queue {} in environment {} region {}", queueId, environmentId, region);
         
+        // Use wider lookback window (1 hour minimum) to capture data points
+        int lookbackSeconds = Math.max(periodSeconds * 6, 3600);
         Instant endTime = Instant.now();
-        Instant startTime = endTime.minusSeconds(periodSeconds);
+        Instant startTime = endTime.minusSeconds(lookbackSeconds);
         
         String url = String.format("%s/mq/stats/api/v1/organizations/%s/environments/%s/regions/%s/queues/%s?startDate=%s&endDate=%s&period=%d",
                 anypointConfig.getBaseUrl(),
@@ -235,8 +237,10 @@ public class AnypointMqClient {
     public Mono<ExchangeStats> getExchangeStats(String environmentId, String region, String exchangeId, int periodSeconds) {
         log.debug("Getting stats for exchange {} in environment {} region {}", exchangeId, environmentId, region);
         
+        // Use wider lookback window (1 hour minimum) to capture data points that may not be in the latest bucket
+        int lookbackSeconds = Math.max(periodSeconds * 6, 3600);
         Instant endTime = Instant.now();
-        Instant startTime = endTime.minusSeconds(periodSeconds);
+        Instant startTime = endTime.minusSeconds(lookbackSeconds);
         
         String url = String.format("%s/mq/stats/api/v1/organizations/%s/environments/%s/regions/%s/exchanges/%s?startDate=%s&endDate=%s&period=%d",
                 anypointConfig.getBaseUrl(),
