@@ -158,32 +158,19 @@ public class MqMetricsCollector {
 
     /**
      * Collect metrics for a single queue.
-     * Uses Admin API for real-time depth (messagesInQueue, messagesInFlight)
-     * and Stats API for throughput metrics (sent, received, acked).
+     * Real-time depth (messagesInQueue, messagesInFlight) comes from the Admin API
+     * list response (already on the Queue object). Stats API provides throughput.
      */
     private Mono<Void> collectSingleQueueMetrics(Queue queue, String environmentName) {
-        Mono<QueueStats> depthMono = mqClient.getQueueDepth(queue.getEnvironment(), queue.getRegion(), queue.getQueueId())
-                .onErrorResume(error -> {
-                    log.warn("Failed to get real-time depth for queue {}, falling back to stats API: {}", queue.getQueueId(), error.getMessage());
-                    return Mono.empty();
-                });
-        
-        Mono<QueueStats> statsMono = mqClient.getQueueStats(queue.getEnvironment(), queue.getRegion(), queue.getQueueId(), anypointConfig.getScrape().getPeriodSeconds())
-                .onErrorResume(error -> {
-                    log.warn("Failed to get stats for queue {}: {}", queue.getQueueId(), error.getMessage());
-                    return Mono.empty();
-                });
-        
-        return Mono.zip(depthMono.defaultIfEmpty(new QueueStats()), statsMono.defaultIfEmpty(new QueueStats()))
-                .doOnNext(tuple -> {
-                    QueueStats depth = tuple.getT1();
-                    QueueStats stats = tuple.getT2();
-                    // Merge: use real-time depth for queue/flight counts, stats API for throughput
-                    if (depth.getMessagesInQueue() > 0 || depth.getMessagesInFlight() > 0) {
-                        stats.setMessagesInQueue(depth.getMessagesInQueue());
-                        stats.setMessagesInFlight(depth.getMessagesInFlight());
+        return mqClient.getQueueStats(queue.getEnvironment(), queue.getRegion(), queue.getQueueId(), anypointConfig.getScrape().getPeriodSeconds())
+                .doOnNext(stats -> {
+                    // Override stats API depth with real-time depth from Admin API list
+                    if (queue.getMessagesInQueue() != null) {
+                        stats.setMessagesInQueue(queue.getMessagesInQueue());
                     }
-                    stats.setQueueId(queue.getQueueId());
+                    if (queue.getMessagesInFlight() != null) {
+                        stats.setMessagesInFlight(queue.getMessagesInFlight());
+                    }
                     stats.setQueue(queue);
                     updateQueueMetrics(stats, environmentName);
                     updateQueueInfoMetrics(queue, environmentName);

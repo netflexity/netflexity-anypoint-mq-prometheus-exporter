@@ -69,6 +69,18 @@ public class Queue {
     private Boolean encrypted = false;
 
     /**
+     * Real-time messages currently in the queue (from Admin API)
+     */
+    @JsonProperty("messagesInQueue")
+    private Long messagesInQueue;
+
+    /**
+     * Real-time messages currently in flight (from Admin API)
+     */
+    @JsonProperty("messagesInFlight")
+    private Long messagesInFlight;
+
+    /**
      * Region where the queue is located
      */
     private String region;
