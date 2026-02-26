@@ -252,30 +252,14 @@ public class AnypointMqClient {
                 ISO_FORMATTER.format(endTime),
                 periodSeconds);
 
-        log.info("Exchange stats URL: {}", url);
-        
         return authClient.getAccessToken()
                 .flatMap(token -> webClient.get()
                         .uri(url)
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
                         .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get exchange stats for " + exchangeId))
-                        .bodyToMono(String.class)
-                        .doOnNext(raw -> log.info("Exchange stats raw response for {}: {}", exchangeId, raw))
-                        .map(raw -> {
-                            try {
-                                ExchangeStats stats = new com.fasterxml.jackson.databind.ObjectMapper()
-                                    .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-                                    .readValue(raw, ExchangeStats.class);
-                                stats.setExchangeId(exchangeId);
-                                return stats;
-                            } catch (Exception e) {
-                                log.error("Failed to parse exchange stats: {}", e.getMessage());
-                                ExchangeStats empty = new ExchangeStats();
-                                empty.setExchangeId(exchangeId);
-                                return empty;
-                            }
-                        }))
+                        .bodyToMono(ExchangeStats.class)
+                        .doOnNext(stats -> stats.setExchangeId(exchangeId)))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError)
                         .doBeforeRetry(retrySignal -> log.warn("Retrying get exchange stats for {}, attempt {}: {}", exchangeId, retrySignal.totalRetries() + 1, retrySignal.failure().getMessage())))

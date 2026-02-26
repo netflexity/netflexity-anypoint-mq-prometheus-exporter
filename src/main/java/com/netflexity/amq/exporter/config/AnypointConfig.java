@@ -135,6 +135,11 @@ public class AnypointConfig {
          */
         
         private String name;
+
+        /**
+         * Organization name (set during auto-discovery)
+         */
+        private String orgName;
     }
 
     @Data

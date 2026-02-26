@@ -155,9 +155,10 @@ public class MqMetricsCollector {
                             .map(Queue::getQueueId)
                             .collect(java.util.stream.Collectors.toList());
                     
+                    String orgName = environment.getOrgName() != null ? environment.getOrgName() : "default";
                     return mqClient.getBatchQueueDepth(environment.getId(), region, queueIds)
                             .flatMap(depthMap -> Flux.fromIterable(queues)
-                                    .flatMap(queue -> collectSingleQueueMetrics(queue, environment.getName(), depthMap)
+                                    .flatMap(queue -> collectSingleQueueMetrics(queue, environment.getName(), orgName, depthMap)
                                             .onErrorResume(error -> {
                                                 exporterMetrics.incrementErrorCounter("queue_stats_failed");
                                                 log.warn("Failed to collect stats for queue {}: {}", queue.getQueueName(), error.getMessage());
@@ -175,7 +176,7 @@ public class MqMetricsCollector {
      * Collect metrics for a single queue.
      * Merges real-time depth from batch call with throughput from per-queue Stats API.
      */
-    private Mono<Void> collectSingleQueueMetrics(Queue queue, String environmentName, java.util.Map<String, QueueStats> depthMap) {
+    private Mono<Void> collectSingleQueueMetrics(Queue queue, String environmentName, String orgName, java.util.Map<String, QueueStats> depthMap) {
         return mqClient.getQueueStats(queue.getEnvironment(), queue.getRegion(), queue.getQueueId(), anypointConfig.getScrape().getPeriodSeconds())
                 .doOnNext(stats -> {
                     // Override with real-time depth from batch call
@@ -185,8 +186,8 @@ public class MqMetricsCollector {
                         stats.setMessagesInFlight(depth.getMessagesInFlight());
                     }
                     stats.setQueue(queue);
-                    updateQueueMetrics(stats, environmentName);
-                    updateQueueInfoMetrics(queue, environmentName);
+                    updateQueueMetrics(stats, environmentName, orgName);
+                    updateQueueInfoMetrics(queue, environmentName, orgName);
                 })
                 .then();
     }
@@ -195,8 +196,9 @@ public class MqMetricsCollector {
      * Collect exchange metrics for an environment and region
      */
     private Mono<Void> collectExchangeMetrics(AnypointConfig.Environment environment, String region) {
+        String orgName = environment.getOrgName() != null ? environment.getOrgName() : "default";
         return mqClient.listExchanges(environment.getId(), region)
-                .flatMap(exchange -> collectSingleExchangeMetrics(exchange, environment.getName())
+                .flatMap(exchange -> collectSingleExchangeMetrics(exchange, environment.getName(), orgName)
                         .onErrorResume(error -> {
                             exporterMetrics.incrementErrorCounter("exchange_stats_failed");
                             log.warn("Failed to collect stats for exchange {}: {}", exchange.getExchangeName(), error.getMessage());
@@ -212,11 +214,11 @@ public class MqMetricsCollector {
     /**
      * Collect metrics for a single exchange
      */
-    private Mono<Void> collectSingleExchangeMetrics(Exchange exchange, String environmentName) {
+    private Mono<Void> collectSingleExchangeMetrics(Exchange exchange, String environmentName, String orgName) {
         return mqClient.getExchangeStats(exchange.getEnvironment(), exchange.getRegion(), exchange.getExchangeId(), anypointConfig.getScrape().getPeriodSeconds())
                 .doOnNext(stats -> {
                     stats.setExchange(exchange);
-                    updateExchangeMetrics(stats, environmentName);
+                    updateExchangeMetrics(stats, environmentName, orgName);
                 })
                 .then();
     }
@@ -224,34 +226,34 @@ public class MqMetricsCollector {
     /**
      * Update queue metrics in the registry
      */
-    private void updateQueueMetrics(QueueStats stats, String environmentName) {
+    private void updateQueueMetrics(QueueStats stats, String environmentName, String orgName) {
         String queueName = stats.getQueue().getSanitizedQueueName();
         String region = stats.getQueue().getRegion();
         
         // Store current queue stats for monitor integration
-        String statsKey = String.format("%s_%s_%s", queueName, environmentName, region);
+        String statsKey = String.format("%s_%s_%s_%s", orgName, queueName, environmentName, region);
         currentQueueStats.put(statsKey, stats);
         
         // Register or update gauge metrics
         updateGaugeMetric("anypoint_mq_queue_messages_in_flight", 
                 stats.getMessagesInFlight() != null ? stats.getMessagesInFlight() : 0L,
-                "queue_name", queueName, "environment", environmentName, "region", region);
+                "org", orgName, "queue_name", queueName, "environment", environmentName, "region", region);
                 
         updateGaugeMetric("anypoint_mq_queue_messages_in_queue",
                 stats.getMessagesInQueue() != null ? stats.getMessagesInQueue() : 0L,
-                "queue_name", queueName, "environment", environmentName, "region", region);
+                "org", orgName, "queue_name", queueName, "environment", environmentName, "region", region);
                 
         updateGaugeMetric("anypoint_mq_queue_messages_sent_total",
                 stats.getMessagesSent() != null ? stats.getMessagesSent() : 0L,
-                "queue_name", queueName, "environment", environmentName, "region", region);
+                "org", orgName, "queue_name", queueName, "environment", environmentName, "region", region);
                 
         updateGaugeMetric("anypoint_mq_queue_messages_received_total",
                 stats.getMessagesReceived() != null ? stats.getMessagesReceived() : 0L,
-                "queue_name", queueName, "environment", environmentName, "region", region);
+                "org", orgName, "queue_name", queueName, "environment", environmentName, "region", region);
                 
         updateGaugeMetric("anypoint_mq_queue_messages_acked_total",
                 stats.getMessagesAcked() != null ? stats.getMessagesAcked() : 0L,
-                "queue_name", queueName, "environment", environmentName, "region", region);
+                "org", orgName, "queue_name", queueName, "environment", environmentName, "region", region);
 
         if (stats.getQueueSize() != null) {
             updateGaugeMetric("anypoint_mq_queue_size_bytes",
@@ -267,13 +269,14 @@ public class MqMetricsCollector {
     /**
      * Update queue info metrics (metadata)
      */
-    private void updateQueueInfoMetrics(Queue queue, String environmentName) {
-        String key = String.format("%s_%s_%s", queue.getSanitizedQueueName(), environmentName, queue.getRegion());
+    private void updateQueueInfoMetrics(Queue queue, String environmentName, String orgName) {
+        String key = String.format("%s_%s_%s_%s", orgName, queue.getSanitizedQueueName(), environmentName, queue.getRegion());
         
         QueueInfo info = new QueueInfo();
         info.queueName = queue.getSanitizedQueueName();
         info.environment = environmentName;
         info.region = queue.getRegion();
+        info.orgName = orgName;
         info.isDlq = queue.isDeadLetterQueue();
         info.isFifo = queue.getFifo() != null ? queue.getFifo() : false;
         info.maxDeliveries = queue.getMaxDeliveries() != null ? queue.getMaxDeliveries() : 0;
@@ -284,6 +287,7 @@ public class MqMetricsCollector {
         // Register gauge for queue info
         Gauge.builder("anypoint_mq_queue_info", info, queueInfo -> 1.0)
                 .description("Queue metadata information")
+                .tag("org", info.orgName)
                 .tag("queue_name", info.queueName)
                 .tag("environment", info.environment)
                 .tag("region", info.region)
@@ -297,17 +301,17 @@ public class MqMetricsCollector {
     /**
      * Update exchange metrics in the registry
      */
-    private void updateExchangeMetrics(ExchangeStats stats, String environmentName) {
+    private void updateExchangeMetrics(ExchangeStats stats, String environmentName, String orgName) {
         String exchangeName = stats.getExchange().getSanitizedExchangeName();
         String region = stats.getExchange().getRegion();
         
         updateGaugeMetric("anypoint_mq_exchange_messages_published_total",
                 stats.getMessagesPublished() != null ? stats.getMessagesPublished() : 0L,
-                "exchange_name", exchangeName, "environment", environmentName, "region", region);
+                "org", orgName, "exchange_name", exchangeName, "environment", environmentName, "region", region);
                 
         updateGaugeMetric("anypoint_mq_exchange_messages_delivered_total",
                 stats.getMessagesDelivered() != null ? stats.getMessagesDelivered() : 0L,
-                "exchange_name", exchangeName, "environment", environmentName, "region", region);
+                "org", orgName, "exchange_name", exchangeName, "environment", environmentName, "region", region);
         
         log.debug("Updated metrics for exchange {}: published={}, delivered={}",
                 exchangeName, stats.getMessagesPublished(), stats.getMessagesDelivered());
@@ -365,6 +369,7 @@ public class MqMetricsCollector {
      * Helper class to store queue metadata
      */
     private static class QueueInfo {
+        String orgName;
         String queueName;
         String environment;
         String region;

@@ -194,6 +194,7 @@ public class EnvironmentDiscoveryService {
                         AnypointConfig.Environment env = new AnypointConfig.Environment();
                         env.setId(envData.getId());
                         env.setName(envData.getName());
+                        env.setOrgName(org.getName());
                         envs.add(env);
                         log.debug("Discovered environment: {} ({}) type={} in org {}", 
                             envData.getName(), envData.getId(), envData.getType(), org.getName());
