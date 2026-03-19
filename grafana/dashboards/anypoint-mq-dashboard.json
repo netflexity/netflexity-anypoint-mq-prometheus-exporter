@@ -81,7 +81,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(anypoint_mq_queue{org=~\"$org\"})",
+          "expr": "count(count by (queue_name, environment) (anypoint_mq_queue{org=~\"$org\"}))",
           "legendFormat": "Queues"
         }
       ]
@@ -241,7 +241,7 @@
       "type": "stat",
       "targets": [
         {
-          "expr": "count(anypoint_mq_exchange_messages_published)",
+          "expr": "count(count by (exchange_name, environment) (anypoint_mq_exchange_messages_published{org=~\"$org\"}))",
           "legendFormat": "Exchanges"
         }
       ]
