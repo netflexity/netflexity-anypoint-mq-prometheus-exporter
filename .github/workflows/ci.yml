@@ -28,7 +28,13 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
 
-    - name: Build
+    - name: Build & install anypoint-common dependency
+      run: |
+        git clone https://github.com/netflexity/netflexity-anypoint-common.git /tmp/anypoint-common
+        cd /tmp/anypoint-common
+        mvn clean install -DskipTests -q
+
+    - name: Build exporter
       run: mvn clean package -DskipTests
 
     - name: Upload artifact
