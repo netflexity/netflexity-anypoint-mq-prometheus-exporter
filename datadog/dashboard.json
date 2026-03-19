@@ -23,7 +23,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name})",
+                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name})",
                       "aggregator": "last"
                     }
                   ],
@@ -48,7 +48,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_in_queue{$org,$environment,$region}",
+                      "query": "sum:anypoint_mq_queue_messages_in_queue{$environment,$region}",
                       "aggregator": "last"
                     }
                   ],
@@ -56,8 +56,7 @@
                 }
               ],
               "autoscale": true,
-              "precision": 0,
-              "custom_links": []
+              "precision": 0
             },
             "layout": { "x": 2, "y": 0, "width": 2, "height": 2 }
           },
@@ -74,7 +73,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_in_flight{$org,$environment,$region}",
+                      "query": "sum:anypoint_mq_queue_messages_in_flight{$environment,$region}",
                       "aggregator": "last"
                     }
                   ],
@@ -95,12 +94,18 @@
               "type": "query_value",
               "requests": [
                 {
-                  "formulas": [{ "formula": "query1" }],
+                  "formulas": [{ "formula": "query1 + query2" }],
                   "queries": [
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region}",
+                      "query": "sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$environment,$region}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$environment,$region}",
                       "aggregator": "last"
                     }
                   ],
@@ -129,7 +134,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$org,$region} by {environment})",
+                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$region} by {environment})",
                       "aggregator": "last"
                     }
                   ],
@@ -154,7 +159,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "count_nonzero(avg:anypoint_mq_exchange_messages_published_total{$org,$environment,$region} by {exchange_name})",
+                      "query": "count_nonzero(avg:anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name})",
                       "aggregator": "last"
                     }
                   ],
@@ -189,7 +194,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "top(avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}, 10, 'last', 'desc')"
+                      "query": "top(avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}, 10, 'last', 'desc')"
                     }
                   ],
                   "response_format": "timeseries",
@@ -199,8 +204,8 @@
               ],
               "yaxis": { "include_zero": true, "min": "0" },
               "markers": [
-                { "value": "y = 1000", "display_type": "warning dashed", "label": "Warning" },
-                { "value": "y = 10000", "display_type": "error dashed", "label": "Critical" }
+                { "value": "y = 1000", "display_type": "warning dashed", "label": "Warning (1K)" },
+                { "value": "y = 10000", "display_type": "error dashed", "label": "Critical (10K)" }
               ]
             },
             "layout": { "x": 0, "y": 0, "width": 8, "height": 4 }
@@ -218,7 +223,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
@@ -239,7 +244,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_flight{$org,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq_queue_messages_in_flight{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -264,7 +269,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
@@ -301,7 +306,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_sent_total{$org,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -323,7 +328,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_received_total{$org,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq_queue_messages_received{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -345,7 +350,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_acked_total{$org,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -370,12 +375,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_sent_total{$org,$environment,$region,$queue}"
+                      "query": "sum:anypoint_mq_queue_messages_sent{$environment,$region,$queue}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "sum:anypoint_mq_queue_messages_acked_total{$org,$environment,$region,$queue}"
+                      "query": "sum:anypoint_mq_queue_messages_acked{$environment,$region,$queue}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -399,12 +404,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_sent_total{$org,$environment,$region} by {queue_name}"
+                      "query": "sum:anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "sum:anypoint_mq_queue_messages_acked_total{$org,$environment,$region} by {queue_name}"
+                      "query": "sum:anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -434,12 +439,20 @@
               "type": "timeseries",
               "requests": [
                 {
-                  "formulas": [{ "formula": "query1" }],
+                  "formulas": [
+                    { "formula": "query1", "alias": "DLQ (*-dlq)" },
+                    { "formula": "query2", "alias": "DLQ (*dead*)" }
+                  ],
                   "queries": [
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$environment,$region} by {queue_name}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -464,7 +477,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*,$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
@@ -500,7 +513,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_exchange_messages_published_total{$org,$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -522,7 +535,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_exchange_messages_delivered_total{$org,$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq_exchange_messages_delivered{$environment,$region} by {exchange_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -546,12 +559,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_exchange_messages_published_total{$org,$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:anypoint_mq_exchange_messages_delivered_total{$org,$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq_exchange_messages_delivered{$environment,$region} by {exchange_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -597,31 +610,31 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name,environment,org}",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:anypoint_mq_queue_messages_in_flight{$org,$environment,$region} by {queue_name,environment,org}",
+                      "query": "avg:anypoint_mq_queue_messages_in_flight{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query3",
-                      "query": "avg:anypoint_mq_queue_messages_sent_total{$org,$environment,$region} by {queue_name,environment,org}",
+                      "query": "avg:anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query4",
-                      "query": "avg:anypoint_mq_queue_messages_received_total{$org,$environment,$region} by {queue_name,environment,org}",
+                      "query": "avg:anypoint_mq_queue_messages_received{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query5",
-                      "query": "avg:anypoint_mq_queue_messages_acked_total{$org,$environment,$region} by {queue_name,environment,org}",
+                      "query": "avg:anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -640,13 +653,59 @@
       "id": 700,
       "definition": {
         "type": "group",
-        "title": "Exporter Health",
+        "title": "Monitors (Pro)",
         "show_title": true,
         "layout_type": "ordered",
         "widgets": [
           {
             "definition": {
-              "title": "Scrape Duration",
+              "title": "Monitor Evaluations",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_monitor_evaluations_total{$environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 0, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Notifications Sent",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_monitor_notifications_total{$environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 3, "y": 0, "width": 3, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Triggered Monitors",
               "type": "timeseries",
               "requests": [
                 {
@@ -655,7 +714,42 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_scrape_duration_seconds{$org,$environment}"
+                      "query": "avg:anypoint_mq_monitor_triggered{$environment,$region} by {monitor_name,queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": { "palette": "red" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0", "max": "1.1" }
+            },
+            "layout": { "x": 6, "y": 0, "width": 6, "height": 2 }
+          }
+        ]
+      },
+      "layout": { "x": 0, "y": 35, "width": 12, "height": 3 }
+    },
+    {
+      "id": 800,
+      "definition": {
+        "type": "group",
+        "title": "Exporter Health",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Scrape Duration (seconds)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_scrape_duration_seconds_max{$environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -665,7 +759,7 @@
               ],
               "yaxis": { "include_zero": true, "min": "0" }
             },
-            "layout": { "x": 0, "y": 0, "width": 4, "height": 3 }
+            "layout": { "x": 0, "y": 0, "width": 3, "height": 3 }
           },
           {
             "definition": {
@@ -678,7 +772,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_scrape_errors_total{$org,$environment}"
+                      "query": "sum:anypoint_mq_scrape_errors_total{$environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -688,7 +782,7 @@
               ],
               "yaxis": { "include_zero": true, "min": "0" }
             },
-            "layout": { "x": 4, "y": 0, "width": 4, "height": 3 }
+            "layout": { "x": 3, "y": 0, "width": 3, "height": 3 }
           },
           {
             "definition": {
@@ -701,7 +795,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:process_uptime_seconds{service:anypoint-mq-prometheus-exporter}",
+                      "query": "avg:process_uptime_seconds{*}",
                       "aggregator": "last"
                     }
                   ],
@@ -712,28 +806,28 @@
               "precision": 1,
               "custom_unit": "hrs"
             },
-            "layout": { "x": 8, "y": 0, "width": 2, "height": 3 }
+            "layout": { "x": 6, "y": 0, "width": 2, "height": 3 }
           },
           {
             "definition": {
-              "title": "JVM Heap Used",
+              "title": "JVM Heap Used (MB)",
               "type": "timeseries",
               "requests": [
                 {
                   "formulas": [
-                    { "formula": "query1 / 1048576", "alias": "Used (MB)" },
-                    { "formula": "query2 / 1048576", "alias": "Max (MB)" }
+                    { "formula": "query1 / 1048576", "alias": "Used" },
+                    { "formula": "query2 / 1048576", "alias": "Max" }
                   ],
                   "queries": [
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:jvm_memory_used_bytes{area:heap,service:anypoint-mq-prometheus-exporter}"
+                      "query": "avg:jvm_memory_used_bytes{area:heap}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:jvm_memory_max_bytes{area:heap,service:anypoint-mq-prometheus-exporter}"
+                      "query": "avg:jvm_memory_max_bytes{area:heap}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -742,20 +836,81 @@
                 }
               ]
             },
-            "layout": { "x": 10, "y": 0, "width": 2, "height": 3 }
+            "layout": { "x": 8, "y": 0, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "CPU Usage",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1 * 100", "alias": "Process CPU %" },
+                    { "formula": "query2 * 100", "alias": "System CPU %" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:process_cpu_usage{*}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:system_cpu_usage{*}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "warm" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0", "max": "100" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "JVM Threads",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1", "alias": "Live" },
+                    { "formula": "query2", "alias": "Daemon" },
+                    { "formula": "query3", "alias": "Peak" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm_threads_live_threads{*}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:jvm_threads_daemon_threads{*}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:jvm_threads_peak_threads{*}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "cool" }
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 3 }
           }
         ]
       },
-      "layout": { "x": 0, "y": 35, "width": 12, "height": 4 }
+      "layout": { "x": 0, "y": 38, "width": 12, "height": 7 }
     }
   ],
   "template_variables": [
-    {
-      "name": "org",
-      "prefix": "org",
-      "available_values": [],
-      "default": "*"
-    },
     {
       "name": "environment",
       "prefix": "environment",

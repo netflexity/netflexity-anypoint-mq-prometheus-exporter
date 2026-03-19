@@ -1,8 +1,8 @@
 {
-  "name": "[Anypoint MQ] Stale Queue — No Consumer Activity",
+  "name": "[Anypoint MQ] Stale Queue - No Consumer Activity",
   "type": "metric alert",
-  "query": "sum(last_30m):avg:anypoint_mq_queue_messages_acked_total{*} by {queue_name,environment,org}.as_count() < 1",
-  "message": "{{#is_alert}}\n\U0001F4A4 **No consumer activity for 30 minutes**\n\n| | |\n|---|---|\n| **Queue** | `{{queue_name.name}}` |\n| **Environment** | `{{environment.name}}` |\n| **Acked (30m)** | {{value}} |\n\n**What this means:** This queue has had zero message acknowledgments for the last 30 minutes. If the queue has pending messages, consumers may be down.\n\n**Actions:**\n1. Check if consumer applications are running\n2. Verify network connectivity to Anypoint MQ\n3. Check consumer deployment status in Runtime Manager\n4. Review if the queue is intentionally idle (batch processing schedule)\n\n@slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\n\u2705 Consumer activity resumed on `{{queue_name.name}}` in `{{environment.name}}`.\n{{/is_recovery}}",
+  "query": "sum(last_30m):avg:anypoint_mq_queue_messages_acked{*} by {queue_name,environment}.as_count() < 1",
+  "message": "{{#is_alert}}\nNo consumer activity for 30 minutes\n\nQueue: {{queue_name.name}}\nEnvironment: {{environment.name}}\nAcked (30m): {{value}}\n\nThis queue has had zero message acknowledgments for the last 30 minutes. If the queue has pending messages, consumers may be down.\n\nActions:\n1. Check if consumer applications are running\n2. Verify network connectivity to Anypoint MQ\n3. Check consumer deployment status in Runtime Manager\n4. Review if the queue is intentionally idle (batch processing schedule)\n\n@slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\nConsumer activity resumed on {{queue_name.name}} in {{environment.name}}.\n{{/is_recovery}}",
   "tags": [
     "service:anypoint-mq",
     "severity:warning",
@@ -13,7 +13,6 @@
     "thresholds": {
       "critical": 1
     },
-    "threshold_windows": {},
     "notify_no_data": false,
     "renotify_interval": 60,
     "evaluation_delay": 60,

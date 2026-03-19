@@ -1,8 +1,8 @@
 {
   "name": "[Anypoint MQ] Dead Letter Queue Has Messages",
   "type": "metric alert",
-  "query": "avg(last_5m):sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*} by {queue_name,environment,org} > 0",
-  "message": "{{#is_alert}}\n\U0001F6A8 **Dead letter queue has unprocessed messages**\n\n| | |\n|---|---|\n| **Queue** | `{{queue_name.name}}` |\n| **Environment** | `{{environment.name}}` |\n| **Organization** | `{{org.name}}` |\n| **Messages** | {{value}} |\n\n**What this means:** Messages failed processing and were routed to the DLQ. Each message represents a transaction that did not complete.\n\n**Actions:**\n1. Check consumer application logs for processing errors\n2. Review message payloads in Anypoint MQ console\n3. Fix the root cause, then replay messages from DLQ\n\n@pagerduty-mulesoft @slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\n\u2705 DLQ `{{queue_name.name}}` in `{{environment.name}}` is now empty.\n{{/is_recovery}}",
+  "query": "avg(last_5m):sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*} by {queue_name,environment} > 0",
+  "message": "{{#is_alert}}\nDead letter queue has unprocessed messages\n\nQueue: {{queue_name.name}}\nEnvironment: {{environment.name}}\nMessages: {{value}}\n\nFailed messages need investigation. Check consumer logs for processing errors.\nReview message payloads in Anypoint MQ console, fix root cause, then replay from DLQ.\n\n@pagerduty-mulesoft @slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\nDLQ {{queue_name.name}} in {{environment.name}} is now empty.\n{{/is_recovery}}",
   "tags": [
     "service:anypoint-mq",
     "severity:critical",
