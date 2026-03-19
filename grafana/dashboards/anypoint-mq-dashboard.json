@@ -1319,9 +1319,10 @@
       },
       "targets": [
         {
-          "expr": "clamp_max(clamp_min(anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}, 0), 1) * 0 + (anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} < 100) * 1 + (anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} >= 100 and anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} < 1000) * 2 + (anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} >= 1000) * 3",
+          "expr": "anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}",
           "legendFormat": "{{environment}} / {{queue_name}}",
-          "instant": false
+          "instant": false,
+          "range": true
         }
       ],
       "fieldConfig": {
@@ -1332,56 +1333,24 @@
           "thresholds": {
             "steps": [
               {
-                "color": "transparent",
+                "color": "green",
                 "value": null
               },
               {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "green",
-                "value": 1
-              },
-              {
                 "color": "yellow",
-                "value": 2
+                "value": 100
+              },
+              {
+                "color": "orange",
+                "value": 1000
               },
               {
                 "color": "red",
-                "value": 3
+                "value": 10000
               }
             ]
           },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "1": {
-                  "text": "Healthy",
-                  "color": "green"
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "2": {
-                  "text": "Warning",
-                  "color": "yellow"
-                }
-              }
-            },
-            {
-              "type": "value",
-              "options": {
-                "3": {
-                  "text": "Critical",
-                  "color": "red"
-                }
-              }
-            }
-          ]
+          "mappings": []
         }
       },
       "options": {
