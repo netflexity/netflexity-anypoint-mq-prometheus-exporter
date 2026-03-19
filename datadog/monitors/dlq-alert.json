@@ -1,7 +1,7 @@
 {
   "name": "[Anypoint MQ] Dead Letter Queue Has Messages",
   "type": "metric alert",
-  "query": "avg(last_5m):sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*} by {queue_name,environment} > 0",
+  "query": "avg(last_5m):sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*} by {queue_name,environment} > 0",
   "message": "{{#is_alert}}\nDead letter queue has unprocessed messages\n\nQueue: {{queue_name.name}}\nEnvironment: {{environment.name}}\nMessages: {{value}}\n\nFailed messages need investigation. Check consumer logs for processing errors.\nReview message payloads in Anypoint MQ console, fix root cause, then replay from DLQ.\n\n@pagerduty-mulesoft @slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\nDLQ {{queue_name.name}} in {{environment.name}} is now empty.\n{{/is_recovery}}",
   "tags": [
     "service:anypoint-mq",

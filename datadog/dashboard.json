@@ -23,7 +23,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name})",
+                      "query": "count_nonzero(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name})",
                       "aggregator": "last"
                     }
                   ],
@@ -48,7 +48,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_in_queue{$environment,$region}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{$environment,$region}",
                       "aggregator": "last"
                     }
                   ],
@@ -73,7 +73,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_in_flight{$environment,$region}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_flight{$environment,$region}",
                       "aggregator": "last"
                     }
                   ],
@@ -99,13 +99,13 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$environment,$region}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$environment,$region}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "sum:anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$environment,$region}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$environment,$region}",
                       "aggregator": "last"
                     }
                   ],
@@ -134,7 +134,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$region} by {environment})",
+                      "query": "count_nonzero(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$region} by {environment})",
                       "aggregator": "last"
                     }
                   ],
@@ -159,7 +159,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "count_nonzero(avg:anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name})",
+                      "query": "count_nonzero(avg:anypoint_mq.anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name})",
                       "aggregator": "last"
                     }
                   ],
@@ -194,7 +194,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "top(avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}, 10, 'last', 'desc')"
+                      "query": "top(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}, 10, 'last', 'desc')"
                     }
                   ],
                   "response_format": "timeseries",
@@ -223,7 +223,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
@@ -244,7 +244,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_flight{$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -269,7 +269,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
@@ -306,7 +306,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -328,7 +328,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_received{$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -350,7 +350,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -375,12 +375,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_sent{$environment,$region,$queue}"
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$environment,$region,$queue}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "sum:anypoint_mq_queue_messages_acked{$environment,$region,$queue}"
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_acked{$environment,$region,$queue}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -404,12 +404,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name}"
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "sum:anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name}"
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -447,12 +447,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$environment,$region} by {queue_name}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$environment,$region} by {queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -477,7 +477,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*,$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*,$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
@@ -513,7 +513,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -535,7 +535,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_exchange_messages_delivered{$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_delivered{$environment,$region} by {exchange_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -559,12 +559,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_published{$environment,$region} by {exchange_name}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:anypoint_mq_exchange_messages_delivered{$environment,$region} by {exchange_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_delivered{$environment,$region} by {exchange_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -610,31 +610,31 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name,environment}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:anypoint_mq_queue_messages_in_flight{$environment,$region} by {queue_name,environment}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query3",
-                      "query": "avg:anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name,environment}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query4",
-                      "query": "avg:anypoint_mq_queue_messages_received{$environment,$region} by {queue_name,environment}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query5",
-                      "query": "avg:anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name,environment}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -668,7 +668,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_monitor_evaluations_total{$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_monitor_evaluations_total{$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -691,7 +691,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_monitor_notifications_total{$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_monitor_notifications_total{$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -714,7 +714,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_monitor_triggered{$environment,$region} by {monitor_name,queue_name}"
+                      "query": "avg:anypoint_mq.anypoint_mq_monitor_triggered{$environment,$region} by {monitor_name,queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -749,7 +749,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq_scrape_duration_seconds_max{$environment}"
+                      "query": "avg:anypoint_mq.anypoint_mq_scrape_duration_seconds_max{$environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -772,7 +772,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq_scrape_errors_total{$environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_scrape_errors_total{$environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -795,7 +795,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:process_uptime_seconds{*}",
+                      "query": "avg:anypoint_mq.process_uptime_seconds{*}",
                       "aggregator": "last"
                     }
                   ],
@@ -822,12 +822,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:jvm_memory_used_bytes{area:heap}"
+                      "query": "avg:anypoint_mq.jvm_memory_used_bytes{area:heap}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:jvm_memory_max_bytes{area:heap}"
+                      "query": "avg:anypoint_mq.jvm_memory_max_bytes{area:heap}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -852,12 +852,12 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:process_cpu_usage{*}"
+                      "query": "avg:anypoint_mq.process_cpu_usage{*}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:system_cpu_usage{*}"
+                      "query": "avg:anypoint_mq.system_cpu_usage{*}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -884,17 +884,17 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:jvm_threads_live_threads{*}"
+                      "query": "avg:anypoint_mq.jvm_threads_live_threads{*}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query2",
-                      "query": "avg:jvm_threads_daemon_threads{*}"
+                      "query": "avg:anypoint_mq.jvm_threads_daemon_threads{*}"
                     },
                     {
                       "data_source": "metrics",
                       "name": "query3",
-                      "query": "avg:jvm_threads_peak_threads{*}"
+                      "query": "avg:anypoint_mq.jvm_threads_peak_threads{*}"
                     }
                   ],
                   "response_format": "timeseries",
