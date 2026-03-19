@@ -1347,6 +1347,930 @@
         "width": 12,
         "height": 7
       }
+    },
+    {
+      "id": 900,
+      "definition": {
+        "type": "group",
+        "title": "\ud83d\uddfa\ufe0f Queue Health Heatmap",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Queue Health Status (depth over time)",
+              "type": "heatmap",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "style": {
+                    "palette": "dog_classic"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "min": "0"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "Queue Depth Distribution",
+              "type": "toplist",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1",
+                      "limit": {
+                        "count": 20,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 10000,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 1000,
+                      "palette": "white_on_yellow"
+                    },
+                    {
+                      "comparator": "<=",
+                      "value": 1000,
+                      "palette": "white_on_green"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 4,
+              "width": 12,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 45,
+        "width": 12,
+        "height": 9
+      }
+    },
+    {
+      "id": 901,
+      "definition": {
+        "type": "group",
+        "title": "\ud83d\udcca Consumer Lag",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Consumer Lag (Sent \u2212 Acked)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "sent",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "acked",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "sent - acked",
+                      "limit": {
+                        "count": 20,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 10000,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 1000,
+                      "palette": "white_on_yellow"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 0,
+                      "palette": "white_on_green"
+                    }
+                  ]
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "Consumer Lag Over Time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "sent",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment,$region,$queue} by {queue_name}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "acked",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$org,$environment,$region,$queue} by {queue_name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "sent - acked",
+                      "alias": "Lag"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "area",
+                  "style": {
+                    "palette": "warm"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "min": "0"
+              }
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 54,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 902,
+      "definition": {
+        "type": "group",
+        "title": "\u23f1\ufe0f Queue Latency Estimation",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Estimated Wait Time (depth \u00f7 ack rate)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "depth",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region,$queue} by {queue_name}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "acked",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$org,$environment,$region,$queue} by {queue_name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "depth / hour_before(acked)",
+                      "alias": "Wait (est.)"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "cool",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "min": "0",
+                "label": "seconds"
+              }
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 8,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "Processing Rate (acked/interval)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "acked",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "per_minute(acked)",
+                      "limit": {
+                        "count": 15,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            },
+            "layout": {
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 59,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 903,
+      "definition": {
+        "type": "group",
+        "title": "\ud83d\udcc8 Throughput Velocity",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Queue Depth Velocity (rate of change)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "depth",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region,$queue} by {queue_name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "derivative(depth)",
+                      "alias": "Velocity"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "dog_classic",
+                    "line_width": "normal"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "label": "msgs/sec"
+              },
+              "markers": [
+                {
+                  "value": "y = 0",
+                  "display_type": "error dashed",
+                  "label": "Zero line"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "Send vs Receive Rate",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "sent",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment,$region,$queue} by {queue_name}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "recv",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_received{$org,$environment,$region,$queue} by {queue_name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "per_minute(sent)",
+                      "alias": "Send Rate"
+                    },
+                    {
+                      "formula": "per_minute(recv)",
+                      "alias": "Receive Rate"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "dog_classic",
+                    "line_width": "thick"
+                  }
+                }
+              ],
+              "yaxis": {
+                "include_zero": true,
+                "label": "msgs/min"
+              }
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 64,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 904,
+      "definition": {
+        "type": "group",
+        "title": "\ud83c\udff7\ufe0f Org & Environment Breakdown",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Queues by Environment",
+              "type": "sunburst",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue{$org,$environment,$region} by {environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 4,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "Message Volume by Environment",
+              "type": "sunburst",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            },
+            "layout": {
+              "x": 4,
+              "y": 0,
+              "width": 4,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "Queues by Organization",
+              "type": "sunburst",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue{$org,$environment,$region} by {org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            },
+            "layout": {
+              "x": 8,
+              "y": 0,
+              "width": 4,
+              "height": 4
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 69,
+        "width": 12,
+        "height": 5
+      }
+    },
+    {
+      "id": 905,
+      "definition": {
+        "type": "group",
+        "title": "\ud83d\udc80 Dead Letter Queue Analysis",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "DLQ Ratio (% of total)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "dlq",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "dead",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$org,$environment,$region}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "total",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment,$region}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "((dlq + dead) / total) * 100"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 10,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 1,
+                      "palette": "white_on_yellow"
+                    },
+                    {
+                      "comparator": "<=",
+                      "value": 1,
+                      "palette": "white_on_green"
+                    }
+                  ]
+                }
+              ],
+              "autoscale": false,
+              "precision": 2,
+              "custom_unit": "%"
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 3,
+              "height": 3
+            }
+          },
+          {
+            "definition": {
+              "title": "DLQ Messages Over Time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q1",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q1"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": {
+                    "palette": "red"
+                  }
+                },
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q2",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dead*,$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q2"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": {
+                    "palette": "orange"
+                  }
+                }
+              ]
+            },
+            "layout": {
+              "x": 3,
+              "y": 0,
+              "width": 9,
+              "height": 3
+            }
+          },
+          {
+            "definition": {
+              "title": "DLQ Inventory",
+              "type": "query_table",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "depth",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*dlq* OR queue_name:*dead*,$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "inflight",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{queue_name:*dlq* OR queue_name:*dead*,$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "depth",
+                      "alias": "Messages",
+                      "conditional_formats": [
+                        {
+                          "comparator": ">",
+                          "value": 0,
+                          "palette": "white_on_red"
+                        }
+                      ]
+                    },
+                    {
+                      "formula": "inflight",
+                      "alias": "In Flight"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "has_search_bar": "auto"
+            },
+            "layout": {
+              "x": 0,
+              "y": 3,
+              "width": 12,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 74,
+        "width": 12,
+        "height": 7
+      }
+    },
+    {
+      "id": 906,
+      "definition": {
+        "type": "group",
+        "title": "\ud83d\udd04 FIFO Queues",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "FIFO Queues",
+              "type": "query_value",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue{is_fifo:true,$org,$environment,$region} by {queue_name}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "count_nonzero(q)"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": {
+              "x": 0,
+              "y": 0,
+              "width": 2,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "title": "FIFO Messages Queued",
+              "type": "query_value",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{is_fifo:true,$org,$environment,$region}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": {
+              "x": 2,
+              "y": 0,
+              "width": 2,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "title": "FIFO In Flight",
+              "type": "query_value",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_flight{is_fifo:true,$org,$environment,$region}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": {
+              "x": 4,
+              "y": 0,
+              "width": 2,
+              "height": 2
+            }
+          },
+          {
+            "definition": {
+              "title": "FIFO Queue Depth Over Time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "q",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{is_fifo:true,$org,$environment,$region} by {queue_name,environment}"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "q"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "cool",
+                    "line_width": "normal"
+                  }
+                }
+              ]
+            },
+            "layout": {
+              "x": 6,
+              "y": 0,
+              "width": 6,
+              "height": 4
+            }
+          },
+          {
+            "definition": {
+              "title": "FIFO Queue Details",
+              "type": "query_table",
+              "requests": [
+                {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "depth",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{is_fifo:true,$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "inflight",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{is_fifo:true,$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "sent",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{is_fifo:true,$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "acked",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{is_fifo:true,$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "depth",
+                      "alias": "In Queue"
+                    },
+                    {
+                      "formula": "inflight",
+                      "alias": "In Flight"
+                    },
+                    {
+                      "formula": "sent",
+                      "alias": "Sent"
+                    },
+                    {
+                      "formula": "acked",
+                      "alias": "Acked"
+                    },
+                    {
+                      "formula": "sent - acked",
+                      "alias": "Lag"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "has_search_bar": "auto"
+            },
+            "layout": {
+              "x": 0,
+              "y": 4,
+              "width": 12,
+              "height": 3
+            }
+          }
+        ]
+      },
+      "layout": {
+        "x": 0,
+        "y": 81,
+        "width": 12,
+        "height": 8
+      }
     }
   ],
   "template_variables": [
