@@ -10,7 +10,38 @@
     }
   ],
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 0,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "red",
+        "name": "Queue Depth Alerts",
+        "expr": "anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\"} > 1000",
+        "step": "60s",
+        "titleFormat": "\u26a0\ufe0f High Depth",
+        "textFormat": "{{queue_name}}: {{value}} messages"
+      },
+      {
+        "builtIn": 0,
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "dark-red",
+        "name": "DLQ Alerts",
+        "expr": "anypoint_mq_queue_messages_in_queue{queue_name=~\".*dlq.*|.*dead.*\",org=~\"$org\"} > 0",
+        "step": "60s",
+        "titleFormat": "\ud83d\udc80 DLQ Messages",
+        "textFormat": "{{queue_name}}: {{value}} poison messages"
+      }
+    ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
@@ -1257,6 +1288,1043 @@
           "refId": "A",
           "expr": "increase(anypoint_mq_scrape_errors_total[15m])",
           "legendFormat": "Scrape Errors"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "\ud83d\uddfa\ufe0f Queue Health Heatmap",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 75
+      },
+      "id": 301
+    },
+    {
+      "type": "state-timeline",
+      "title": "Queue Health Status",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 302,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 76
+      },
+      "targets": [
+        {
+          "expr": "clamp_max(clamp_min(anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}, 0), 1) * 0 + (anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} < 100) * 1 + (anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} >= 100 and anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} < 1000) * 2 + (anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} >= 1000) * 3",
+          "legendFormat": "{{environment}} / {{queue_name}}",
+          "instant": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "yellow",
+                "value": 2
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "Healthy",
+                  "color": "green"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "2": {
+                  "text": "Warning",
+                  "color": "yellow"
+                }
+              }
+            },
+            {
+              "type": "value",
+              "options": {
+                "3": {
+                  "text": "Critical",
+                  "color": "red"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "auto",
+        "alignValue": "left",
+        "rowHeight": 0.8
+      }
+    },
+    {
+      "type": "heatmap",
+      "title": "Queue Depth Heatmap (Message Distribution)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 303,
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 84
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}",
+          "legendFormat": "{{queue_name}}",
+          "format": "heatmap"
+        }
+      ],
+      "options": {
+        "calculate": true,
+        "calculation": {
+          "xBuckets": {
+            "mode": "size"
+          },
+          "yBuckets": {
+            "mode": "count",
+            "value": "10"
+          }
+        },
+        "color": {
+          "scheme": "Oranges",
+          "fill": "dark-orange",
+          "mode": "scheme"
+        },
+        "yAxis": {
+          "unit": "short"
+        },
+        "cellGap": 1,
+        "showValue": "never"
+      }
+    },
+    {
+      "type": "row",
+      "title": "\ud83d\udcca Consumer Lag",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 92
+      },
+      "id": 304
+    },
+    {
+      "type": "gauge",
+      "title": "Consumer Lag (Sent \u2212 Acked)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 305,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 93
+      },
+      "targets": [
+        {
+          "expr": "(anypoint_mq_queue_messages_sent{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} - anypoint_mq_queue_messages_acked{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}) > 0",
+          "legendFormat": "{{environment}} / {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "orange",
+                "value": 1000
+              },
+              {
+                "color": "red",
+                "value": 10000
+              }
+            ]
+          },
+          "min": 0
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumer Lag Over Time (Sent \u2212 Acked)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 306,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 93
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_sent{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} - anypoint_mq_queue_messages_acked{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}",
+          "legendFormat": "{{environment}} / {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 20,
+            "gradientMode": "scheme",
+            "lineWidth": 2,
+            "drawStyle": "line"
+          }
+        }
+      }
+    },
+    {
+      "type": "row",
+      "title": "\u23f1\ufe0f Queue Latency Estimation",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 101
+      },
+      "id": 307
+    },
+    {
+      "type": "timeseries",
+      "title": "Estimated Queue Wait Time (depth \u00f7 consumption rate)",
+      "description": "Estimates how long a new message would wait in queue based on current depth and consumption rate. Higher = slower processing.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 308,
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 0,
+        "y": 102
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} / (rate(anypoint_mq_queue_messages_received{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m]) > 0)",
+          "legendFormat": "{{environment}} / {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "drawStyle": "line",
+            "spanNulls": true
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "red",
+                "value": 300
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Avg Processing Rate (msgs/min)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 309,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 102
+      },
+      "targets": [
+        {
+          "expr": "rate(anypoint_mq_queue_messages_acked{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m]) * 60",
+          "legendFormat": "{{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "msg/min",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "green",
+                "value": 10
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "type": "row",
+      "title": "\ud83d\udcc8 Throughput Velocity",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 110
+      },
+      "id": 310
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue Depth Velocity (rate of change)",
+      "description": "Positive = queue growing, Negative = queue draining. Shows acceleration/deceleration of message backlog.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 311,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 111
+      },
+      "targets": [
+        {
+          "expr": "deriv(anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m])",
+          "legendFormat": "{{environment}} / {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "msg/s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "drawStyle": "line",
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Send vs Receive Rate",
+      "description": "Compares message production rate to consumption rate. Gap = backlog building.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 312,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 111
+      },
+      "targets": [
+        {
+          "expr": "rate(anypoint_mq_queue_messages_sent{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m]) * 60",
+          "legendFormat": "SEND: {{queue_name}}"
+        },
+        {
+          "expr": "rate(anypoint_mq_queue_messages_received{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m]) * 60",
+          "legendFormat": "RECV: {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "msg/min",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2,
+            "drawStyle": "line"
+          }
+        }
+      }
+    },
+    {
+      "type": "row",
+      "title": "\ud83c\udff7\ufe0f Org & Environment Breakdown",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 119
+      },
+      "id": 313
+    },
+    {
+      "type": "piechart",
+      "title": "Queues by Environment",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 314,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 120
+      },
+      "targets": [
+        {
+          "expr": "count by (environment) (anypoint_mq_queue{org=~\"$org\"})",
+          "legendFormat": "{{environment}}"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "type": "piechart",
+      "title": "Message Volume by Environment",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 315,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 120
+      },
+      "targets": [
+        {
+          "expr": "sum by (environment) (anypoint_mq_queue_messages_in_queue{org=~\"$org\"})",
+          "legendFormat": "{{environment}}"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "type": "piechart",
+      "title": "Queues by Organization",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 316,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 120
+      },
+      "targets": [
+        {
+          "expr": "count by (org) (anypoint_mq_queue{org=~\"$org\"})",
+          "legendFormat": "{{org}}"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "pieType": "donut",
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "type": "row",
+      "title": "\ud83d\udc80 Dead Letter Queue Analysis",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 128
+      },
+      "id": 317
+    },
+    {
+      "type": "gauge",
+      "title": "DLQ Ratio (% of total messages)",
+      "description": "Percentage of messages ending up in dead letter queues vs total throughput. High ratio = systemic processing failures.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 318,
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 129
+      },
+      "targets": [
+        {
+          "expr": "(sum(anypoint_mq_queue_messages_in_queue{queue_name=~\".*dlq.*|.*dead.*\",org=~\"$org\",environment=~\"$environment\"}) / sum(anypoint_mq_queue_messages_sent{org=~\"$org\",environment=~\"$environment\"})) * 100",
+          "legendFormat": "DLQ Ratio"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "orange",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "DLQ Messages Over Time",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 319,
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 129
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_in_queue{queue_name=~\".*dlq.*|.*dead.*\",org=~\"$org\",environment=~\"$environment\"}",
+          "legendFormat": "{{environment}} / {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 30,
+            "lineWidth": 2,
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "table",
+      "title": "DLQ Inventory",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 320,
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 137
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_in_queue{queue_name=~\".*dlq.*|.*dead.*\",org=~\"$org\",environment=~\"$environment\"}",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "is_dlq": true,
+              "is_fifo": true,
+              "job": true,
+              "instance": true,
+              "max_deliveries": true,
+              "ttl": true,
+              "region": true
+            },
+            "renameByName": {
+              "org": "Organization",
+              "environment": "Environment",
+              "queue_name": "DLQ Name",
+              "Value": "Messages"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Messages"
+            },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "type": "row",
+      "title": "\ud83d\udd04 FIFO Queues",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 143
+      },
+      "id": 321
+    },
+    {
+      "type": "stat",
+      "title": "Total FIFO Queues",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 322,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 144
+      },
+      "targets": [
+        {
+          "expr": "count(anypoint_mq_queue{is_fifo=\"true\",org=~\"$org\",environment=~\"$environment\"})",
+          "legendFormat": "FIFO Queues"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "none"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "FIFO Messages Queued",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 323,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 144
+      },
+      "targets": [
+        {
+          "expr": "sum(anypoint_mq_queue_messages_in_queue{is_fifo=\"true\",org=~\"$org\",environment=~\"$environment\"})",
+          "legendFormat": "In Queue"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 1000
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "type": "stat",
+      "title": "FIFO In Flight",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 324,
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 144
+      },
+      "targets": [
+        {
+          "expr": "sum(anypoint_mq_queue_messages_in_flight{is_fifo=\"true\",org=~\"$org\",environment=~\"$environment\"})",
+          "legendFormat": "In Flight"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              }
+            ]
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "graphMode": "area"
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "FIFO Queue Depth Over Time",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 325,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 144
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_in_queue{is_fifo=\"true\",org=~\"$org\",environment=~\"$environment\"}",
+          "legendFormat": "{{environment}} / {{queue_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "fillOpacity": 15,
+            "lineWidth": 2,
+            "drawStyle": "line"
+          }
+        }
+      }
+    },
+    {
+      "type": "table",
+      "title": "FIFO Queue Details",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "id": 326,
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 148
+      },
+      "targets": [
+        {
+          "expr": "anypoint_mq_queue_messages_in_queue{is_fifo=\"true\",org=~\"$org\",environment=~\"$environment\"}",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table",
+          "refId": "A"
+        },
+        {
+          "expr": "anypoint_mq_queue_messages_in_flight{is_fifo=\"true\",org=~\"$org\",environment=~\"$environment\"}",
+          "legendFormat": "",
+          "instant": true,
+          "format": "table",
+          "refId": "B"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "merge"
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "is_dlq": true,
+              "is_fifo": true,
+              "job": true,
+              "instance": true,
+              "max_deliveries": true,
+              "ttl": true
+            },
+            "renameByName": {
+              "org": "Organization",
+              "environment": "Environment",
+              "queue_name": "FIFO Queue",
+              "region": "Region",
+              "Value #A": "In Queue",
+              "Value #B": "In Flight"
+            }
+          }
         }
       ]
     }
