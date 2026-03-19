@@ -1,0 +1,24 @@
+{
+  "name": "[Anypoint MQ] High In-Flight Messages",
+  "type": "metric alert",
+  "query": "avg(last_5m):avg:anypoint_mq_queue_messages_in_flight{*} by {queue_name,environment,org} > 500",
+  "message": "{{#is_alert}}\n\u26A0\uFE0F **High in-flight messages — consumers may be struggling**\n\n| | |\n|---|---|\n| **Queue** | `{{queue_name.name}}` |\n| **Environment** | `{{environment.name}}` |\n| **In Flight** | {{value}} |\n\n**What this means:** Consumers are fetching messages but not acknowledging them quickly. This typically indicates:\n- Slow downstream service responses\n- Consumer resource exhaustion (CPU/memory)\n- Message processing timeouts\n\nIf in-flight messages exceed the queue's lock TTL, they will be redelivered — causing duplicate processing.\n\n**Actions:**\n1. Check consumer processing times and error rates\n2. Verify downstream service latency\n3. Consider increasing consumer lock TTL or scaling out\n\n@slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_warning}}\n\u26A0\uFE0F Queue `{{queue_name.name}}` has {{value}} in-flight messages — monitoring.\n{{/is_warning}}\n\n{{#is_recovery}}\n\u2705 In-flight messages for `{{queue_name.name}}` back to normal.\n{{/is_recovery}}",
+  "tags": [
+    "service:anypoint-mq",
+    "severity:warning",
+    "team:integration",
+    "source:anypoint-mq-exporter"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 500,
+      "warning": 250
+    },
+    "notify_no_data": false,
+    "renotify_interval": 30,
+    "evaluation_delay": 60,
+    "include_tags": true,
+    "new_group_delay": 60
+  },
+  "priority": 3
+}

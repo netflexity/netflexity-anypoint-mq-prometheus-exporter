@@ -1,286 +1,775 @@
 {
-  "title": "Anypoint MQ - Queue & Exchange Monitoring",
-  "description": "Real-time monitoring of MuleSoft Anypoint MQ queues and exchanges via the Anypoint MQ Prometheus Exporter.",
+  "title": "Anypoint MQ — Queue & Exchange Monitoring",
+  "description": "Real-time monitoring of MuleSoft Anypoint MQ queues and exchanges.\nPowered by the Netflexity Anypoint MQ Prometheus Exporter.\nhttps://github.com/netflexity/netflexity-anypoint-mq-prometheus-exporter",
   "widgets": [
     {
-      "id": 1,
+      "id": 100,
       "definition": {
-        "title": "Messages In Queue (Top 10)",
-        "type": "timeseries",
-        "requests": [
+        "type": "group",
+        "title": "Overview",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "top(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name}, 10, 'mean', 'desc')"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line"
+            "definition": {
+              "title": "Total Queues",
+              "title_size": "16",
+              "title_align": "center",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name})",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 0, "y": 0, "width": 2, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Total Messages Queued",
+              "title_size": "16",
+              "title_align": "center",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_queue_messages_in_queue{$org,$environment,$region}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0,
+              "custom_links": []
+            },
+            "layout": { "x": 2, "y": 0, "width": 2, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "In Flight",
+              "title_size": "16",
+              "title_align": "center",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_queue_messages_in_flight{$org,$environment,$region}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0,
+              "custom_unit": "msg"
+            },
+            "layout": { "x": 4, "y": 0, "width": 2, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "DLQ Messages",
+              "title_size": "16",
+              "title_align": "center",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "conditional_formats": [
+                    { "comparator": ">", "value": 0, "palette": "white_on_red" },
+                    { "comparator": "<=", "value": 0, "palette": "white_on_green" }
+                  ]
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 6, "y": 0, "width": 2, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Environments",
+              "title_size": "16",
+              "title_align": "center",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "count_nonzero(avg:anypoint_mq_queue_messages_in_queue{$org,$region} by {environment})",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 8, "y": 0, "width": 2, "height": 2 }
+          },
+          {
+            "definition": {
+              "title": "Exchanges",
+              "title_size": "16",
+              "title_align": "center",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "count_nonzero(avg:anypoint_mq_exchange_messages_published_total{$org,$environment,$region} by {exchange_name})",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": true,
+              "precision": 0
+            },
+            "layout": { "x": 10, "y": 0, "width": 2, "height": 2 }
           }
         ]
       },
-      "layout": { "x": 0, "y": 0, "width": 6, "height": 4 }
+      "layout": { "x": 0, "y": 0, "width": 12, "height": 3 }
     },
     {
-      "id": 2,
+      "id": 200,
       "definition": {
-        "title": "Messages In Flight",
-        "type": "timeseries",
-        "requests": [
+        "type": "group",
+        "title": "Queue Depth & Backlog",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{*} by {queue_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "bars"
+            "definition": {
+              "title": "Messages In Queue (Top 10)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "top(avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}, 10, 'last', 'desc')"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "normal" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" },
+              "markers": [
+                { "value": "y = 1000", "display_type": "warning dashed", "label": "Warning" },
+                { "value": "y = 10000", "display_type": "error dashed", "label": "Critical" }
+              ]
+            },
+            "layout": { "x": 0, "y": 0, "width": 8, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Queue Depth Distribution",
+              "type": "toplist",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1", "limit": { "count": 20, "order": "desc" } }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            },
+            "layout": { "x": 8, "y": 0, "width": 4, "height": 4 }
+          },
+          {
+            "definition": {
+              "title": "Messages In Flight",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_in_flight{$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": { "palette": "warm" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" }
+            },
+            "layout": { "x": 0, "y": 4, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Queue Backlog Change (1h)",
+              "type": "change",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "change_type": "absolute",
+                  "compare_to": "hour_before",
+                  "order_by": "change",
+                  "order_dir": "desc"
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 4, "width": 6, "height": 3 }
           }
         ]
       },
-      "layout": { "x": 6, "y": 0, "width": 6, "height": 4 }
+      "layout": { "x": 0, "y": 3, "width": 12, "height": 8 }
     },
     {
-      "id": 3,
+      "id": 300,
       "definition": {
-        "title": "Queue Throughput - Messages Received",
-        "type": "timeseries",
-        "requests": [
+        "type": "group",
+        "title": "Throughput",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{*} by {queue_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line"
+            "definition": {
+              "title": "Messages Sent (Published)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_sent_total{$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "cool" }
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 0, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Messages Received (Consumed)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_received_total{$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "purple" }
+                }
+              ]
+            },
+            "layout": { "x": 4, "y": 0, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Messages Acknowledged",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_acked_total{$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "green" }
+                }
+              ]
+            },
+            "layout": { "x": 8, "y": 0, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Processing Rate — Sent vs Acked",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1", "alias": "Sent" },
+                    { "formula": "query2", "alias": "Acknowledged" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_queue_messages_sent_total{$org,$environment,$region,$queue}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:anypoint_mq_queue_messages_acked_total{$org,$environment,$region,$queue}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "dog_classic", "line_type": "solid", "line_width": "thick" }
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 3, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Unacknowledged Gap (Sent - Acked)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1 - query2", "alias": "Unacked" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_queue_messages_sent_total{$org,$environment,$region} by {queue_name}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "sum:anypoint_mq_queue_messages_acked_total{$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "area",
+                  "style": { "palette": "orange" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" }
+            },
+            "layout": { "x": 6, "y": 3, "width": 6, "height": 3 }
           }
         ]
       },
-      "layout": { "x": 0, "y": 4, "width": 4, "height": 3 }
+      "layout": { "x": 0, "y": 11, "width": 12, "height": 7 }
     },
     {
-      "id": 4,
+      "id": 400,
       "definition": {
-        "title": "Queue Throughput - Messages Sent (Published)",
-        "type": "timeseries",
-        "requests": [
+        "type": "group",
+        "title": "Dead Letter Queues",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{*} by {queue_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line"
+            "definition": {
+              "title": "DLQ — Messages Over Time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region} by {queue_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": { "palette": "red" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" }
+            },
+            "layout": { "x": 0, "y": 0, "width": 8, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "DLQ Breakdown",
+              "type": "toplist",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1", "limit": { "count": 10, "order": "desc" } }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{queue_name:*dlq*,$org,$environment,$region} by {queue_name}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar",
+                  "conditional_formats": [
+                    { "comparator": ">", "value": 0, "palette": "white_on_red" }
+                  ]
+                }
+              ]
+            },
+            "layout": { "x": 8, "y": 0, "width": 4, "height": 3 }
           }
         ]
       },
-      "layout": { "x": 4, "y": 4, "width": 4, "height": 3 }
+      "layout": { "x": 0, "y": 18, "width": 12, "height": 4 }
     },
     {
-      "id": 5,
+      "id": 500,
       "definition": {
-        "title": "Messages Acknowledged",
-        "type": "timeseries",
-        "requests": [
+        "type": "group",
+        "title": "Exchanges",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{*} by {queue_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line"
+            "definition": {
+              "title": "Messages Published to Exchanges",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_exchange_messages_published_total{$org,$environment,$region} by {exchange_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "cool" }
+                }
+              ]
+            },
+            "layout": { "x": 0, "y": 0, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Messages Delivered from Exchanges",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_exchange_messages_delivered_total{$org,$environment,$region} by {exchange_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "warm" }
+                }
+              ]
+            },
+            "layout": { "x": 6, "y": 0, "width": 6, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Exchange Fan-out Ratio (Delivered / Published)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query2 / query1", "alias": "Fan-out Ratio" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_exchange_messages_published_total{$org,$environment,$region} by {exchange_name}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:anypoint_mq_exchange_messages_delivered_total{$org,$environment,$region} by {exchange_name}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "green", "line_type": "solid", "line_width": "normal" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" }
+            },
+            "layout": { "x": 0, "y": 3, "width": 12, "height": 3 }
           }
         ]
       },
-      "layout": { "x": 8, "y": 4, "width": 4, "height": 3 }
+      "layout": { "x": 0, "y": 22, "width": 12, "height": 7 }
     },
     {
-      "id": 6,
+      "id": 600,
       "definition": {
-        "title": "Exchange - Messages Published",
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_published{*} by {exchange_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": { "x": 0, "y": 7, "width": 6, "height": 3 }
-    },
-    {
-      "id": 7,
-      "definition": {
-        "title": "Exchange - Messages Delivered",
-        "type": "timeseries",
-        "requests": [
-          {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_exchange_messages_delivered{*} by {exchange_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line"
-          }
-        ]
-      },
-      "layout": { "x": 6, "y": 7, "width": 6, "height": 3 }
-    },
-    {
-      "id": 8,
-      "definition": {
+        "type": "group",
         "title": "Queue Inventory",
-        "type": "query_table",
-        "requests": [
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [
-              { "formula": "query1", "alias": "In Queue" },
-              { "formula": "query2", "alias": "In Flight" },
-              { "formula": "query3", "alias": "Received" }
-            ],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name,env_name,org_name}",
-                "aggregator": "last"
-              },
-              {
-                "data_source": "metrics",
-                "name": "query2",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{*} by {queue_name,env_name,org_name}",
-                "aggregator": "last"
-              },
-              {
-                "data_source": "metrics",
-                "name": "query3",
-                "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{*} by {queue_name,env_name,org_name}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar"
+            "definition": {
+              "title": "All Queues — Current State",
+              "type": "query_table",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1", "alias": "In Queue", "conditional_formats": [
+                      { "comparator": ">", "value": 10000, "palette": "white_on_red" },
+                      { "comparator": ">", "value": 1000, "palette": "white_on_yellow" },
+                      { "comparator": "<=", "value": 1000, "palette": "white_on_green" }
+                    ]},
+                    { "formula": "query2", "alias": "In Flight" },
+                    { "formula": "query3", "alias": "Sent" },
+                    { "formula": "query4", "alias": "Received" },
+                    { "formula": "query5", "alias": "Acked" },
+                    { "formula": "query3 - query5", "alias": "Unacked" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:anypoint_mq_queue_messages_in_flight{$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:anypoint_mq_queue_messages_sent_total{$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query4",
+                      "query": "avg:anypoint_mq_queue_messages_received_total{$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query5",
+                      "query": "avg:anypoint_mq_queue_messages_acked_total{$org,$environment,$region} by {queue_name,environment,org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "has_search_bar": "auto"
+            },
+            "layout": { "x": 0, "y": 0, "width": 12, "height": 5 }
           }
         ]
       },
-      "layout": { "x": 0, "y": 10, "width": 12, "height": 4 }
+      "layout": { "x": 0, "y": 29, "width": 12, "height": 6 }
     },
     {
-      "id": 9,
+      "id": 700,
       "definition": {
-        "title": "Health Scores (Pro)",
-        "type": "timeseries",
-        "requests": [
+        "type": "group",
+        "title": "Exporter Health",
+        "show_title": true,
+        "layout_type": "ordered",
+        "widgets": [
           {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "avg:anypoint_mq.anypoint_mq_monitor_health_score{*} by {queue_name}"
-              }
-            ],
-            "response_format": "timeseries",
-            "display_type": "line",
-            "style": {
-              "palette": "green_to_red"
-            }
+            "definition": {
+              "title": "Scrape Duration",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq_scrape_duration_seconds{$org,$environment}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": { "palette": "grey" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" }
+            },
+            "layout": { "x": 0, "y": 0, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Scrape Errors",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "sum:anypoint_mq_scrape_errors_total{$org,$environment}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": { "palette": "red" }
+                }
+              ],
+              "yaxis": { "include_zero": true, "min": "0" }
+            },
+            "layout": { "x": 4, "y": 0, "width": 4, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "Exporter Uptime",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [{ "formula": "query1 / 3600" }],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:process_uptime_seconds{service:anypoint-mq-prometheus-exporter}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "autoscale": false,
+              "precision": 1,
+              "custom_unit": "hrs"
+            },
+            "layout": { "x": 8, "y": 0, "width": 2, "height": 3 }
+          },
+          {
+            "definition": {
+              "title": "JVM Heap Used",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    { "formula": "query1 / 1048576", "alias": "Used (MB)" },
+                    { "formula": "query2 / 1048576", "alias": "Max (MB)" }
+                  ],
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:jvm_memory_used_bytes{area:heap,service:anypoint-mq-prometheus-exporter}"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:jvm_memory_max_bytes{area:heap,service:anypoint-mq-prometheus-exporter}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "area",
+                  "style": { "palette": "cool" }
+                }
+              ]
+            },
+            "layout": { "x": 10, "y": 0, "width": 2, "height": 3 }
           }
         ]
       },
-      "layout": { "x": 0, "y": 14, "width": 6, "height": 3 }
-    },
-    {
-      "id": 10,
-      "definition": {
-        "title": "DLQ Messages",
-        "type": "query_value",
-        "requests": [
-          {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "sum:anypoint_mq.anypoint_mq_queue_messages_in_queue{queue_name:*-dlq}",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar"
-          }
-        ],
-        "precision": 0
-      },
-      "layout": { "x": 6, "y": 14, "width": 3, "height": 3 }
-    },
-    {
-      "id": 11,
-      "definition": {
-        "title": "Total Queues Monitored",
-        "type": "query_value",
-        "requests": [
-          {
-            "formulas": [{ "formula": "query1" }],
-            "queries": [
-              {
-                "data_source": "metrics",
-                "name": "query1",
-                "query": "count_nonzero(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{*} by {queue_name})",
-                "aggregator": "last"
-              }
-            ],
-            "response_format": "scalar"
-          }
-        ],
-        "precision": 0
-      },
-      "layout": { "x": 9, "y": 14, "width": 3, "height": 3 }
+      "layout": { "x": 0, "y": 35, "width": 12, "height": 4 }
     }
   ],
   "template_variables": [
     {
-      "name": "org_name",
-      "prefix": "org_name",
+      "name": "org",
+      "prefix": "org",
       "available_values": [],
       "default": "*"
     },
     {
-      "name": "env_name",
-      "prefix": "env_name",
+      "name": "environment",
+      "prefix": "environment",
       "available_values": [],
       "default": "*"
     },
     {
-      "name": "queue_name",
+      "name": "region",
+      "prefix": "region",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "queue",
       "prefix": "queue_name",
       "available_values": [],
       "default": "*"

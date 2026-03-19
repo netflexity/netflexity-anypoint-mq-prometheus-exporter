@@ -1,0 +1,25 @@
+{
+  "name": "[Anypoint MQ] Queue Depth Critical",
+  "type": "metric alert",
+  "query": "avg(last_10m):avg:anypoint_mq_queue_messages_in_queue{!queue_name:*dlq*} by {queue_name,environment,org} > 10000",
+  "message": "{{#is_alert}}\n\U0001F534 **Queue depth critical — backlog exceeding 10,000 messages**\n\n| | |\n|---|---|\n| **Queue** | `{{queue_name.name}}` |\n| **Environment** | `{{environment.name}}` |\n| **Messages** | {{value}} |\n\n**Possible causes:**\n- Consumer applications are down or overwhelmed\n- Sudden traffic spike from upstream producers\n- Downstream dependency failure causing slow processing\n\n**Actions:**\n1. Check consumer application health and scaling\n2. Verify downstream service availability\n3. Consider scaling consumers or pausing producers\n\n@pagerduty-mulesoft @slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_warning}}\n\u26A0\uFE0F Queue `{{queue_name.name}}` in `{{environment.name}}` has {{value}} messages (approaching critical threshold).\n@slack-mulesoft-alerts\n{{/is_warning}}\n\n{{#is_recovery}}\n\u2705 Queue `{{queue_name.name}}` in `{{environment.name}}` is back to normal ({{value}} messages).\n{{/is_recovery}}",
+  "tags": [
+    "service:anypoint-mq",
+    "severity:critical",
+    "team:integration",
+    "source:anypoint-mq-exporter"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 10000,
+      "warning": 5000
+    },
+    "notify_no_data": false,
+    "renotify_interval": 60,
+    "renotify_statuses": ["alert"],
+    "evaluation_delay": 60,
+    "include_tags": true,
+    "new_group_delay": 60
+  },
+  "priority": 2
+}
