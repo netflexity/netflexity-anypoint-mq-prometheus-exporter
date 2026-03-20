@@ -43,10 +43,25 @@ public class DemoDataLoader {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Thread loaderThread;
 
+    /** Broker API uses regional endpoints, not the main anypoint.mulesoft.com */
+    private static final Map<String, String> BROKER_URLS = Map.of(
+            "us-east-1", "https://mq-us-east-1.anypoint.mulesoft.com",
+            "us-west-2", "https://mq-us-west-2.anypoint.mulesoft.com",
+            "eu-west-1", "https://mq-eu-west-1.anypoint.mulesoft.com",
+            "ap-southeast-1", "https://mq-ap-southeast-1.anypoint.mulesoft.com",
+            "ap-southeast-2", "https://mq-ap-southeast-2.anypoint.mulesoft.com",
+            "eu-central-1", "https://mq-eu-central-1.anypoint.mulesoft.com",
+            "ca-central-1", "https://mq-ca-central-1.anypoint.mulesoft.com"
+    );
+
     public DemoDataLoader(WebClient webClient, AnypointConfig anypointConfig, AnypointAuthClient authClient) {
         this.webClient = webClient;
         this.anypointConfig = anypointConfig;
         this.authClient = authClient;
+    }
+
+    private String getBrokerUrl(String region) {
+        return BROKER_URLS.getOrDefault(region, "https://mq-us-east-1.anypoint.mulesoft.com");
     }
 
     /**
@@ -250,7 +265,7 @@ public class DemoDataLoader {
 
                                 String url = String.format(
                                         "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages",
-                                        anypointConfig.getBaseUrl(),
+                                        getBrokerUrl(region),
                                         anypointConfig.getOrganizationId(),
                                         environmentId,
                                         region,
@@ -290,7 +305,7 @@ public class DemoDataLoader {
                 .flatMap(token -> {
                     String getUrl = String.format(
                             "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=30000",
-                            anypointConfig.getBaseUrl(),
+                            getBrokerUrl(region),
                             anypointConfig.getOrganizationId(),
                             environmentId,
                             region,
@@ -339,7 +354,7 @@ public class DemoDataLoader {
 
         String url = String.format(
                 "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages/%s",
-                anypointConfig.getBaseUrl(),
+                getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 environmentId,
                 region,

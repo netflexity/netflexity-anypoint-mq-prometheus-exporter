@@ -40,6 +40,21 @@ public class StaleMessageDetector {
     private final AnypointAuthClient authClient;
     private final MeterRegistry meterRegistry;
 
+    /** Broker API uses regional endpoints */
+    private static final Map<String, String> BROKER_URLS = Map.of(
+            "us-east-1", "https://mq-us-east-1.anypoint.mulesoft.com",
+            "us-west-2", "https://mq-us-west-2.anypoint.mulesoft.com",
+            "eu-west-1", "https://mq-eu-west-1.anypoint.mulesoft.com",
+            "ap-southeast-1", "https://mq-ap-southeast-1.anypoint.mulesoft.com",
+            "ap-southeast-2", "https://mq-ap-southeast-2.anypoint.mulesoft.com",
+            "eu-central-1", "https://mq-eu-central-1.anypoint.mulesoft.com",
+            "ca-central-1", "https://mq-ca-central-1.anypoint.mulesoft.com"
+    );
+
+    private String getBrokerUrl(String region) {
+        return BROKER_URLS.getOrDefault(region, "https://mq-us-east-1.anypoint.mulesoft.com");
+    }
+
     /** Previous scrape's message IDs per queue key: "envId_region_queueId" -> Set<messageId> */
     private final ConcurrentHashMap<String, Set<String>> previousMessageIds = new ConcurrentHashMap<>();
 
@@ -113,7 +128,7 @@ public class StaleMessageDetector {
         // Browse messages (non-destructive peek — we'll release locks after)
         String browseUrl = String.format(
                 "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=10000",
-                anypointConfig.getBaseUrl(),
+                getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 env.getId(),
                 region,
@@ -186,7 +201,7 @@ public class StaleMessageDetector {
 
         String url = String.format(
                 "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages/locks",
-                anypointConfig.getBaseUrl(),
+                getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 environmentId,
                 region,
