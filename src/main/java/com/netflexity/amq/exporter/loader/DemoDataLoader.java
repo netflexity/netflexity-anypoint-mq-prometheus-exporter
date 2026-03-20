@@ -201,7 +201,7 @@ public class DemoDataLoader {
         ));
 
         String url = String.format(
-                "%s/organizations/%s/environments/%s/destinations/%s/messages",
+                "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages",
                 brokerUrl, anypointConfig.getOrganizationId(), env.getId(), queueId);
 
         return authClient.getAccessToken()
@@ -321,7 +321,7 @@ public class DemoDataLoader {
                                 }
 
                                 String url = String.format(
-                                        "%s/organizations/%s/environments/%s/destinations/%s/messages",
+                                        "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages",
                                         getBrokerUrl(region),
                                         anypointConfig.getOrganizationId(),
                                         environmentId,
@@ -360,7 +360,7 @@ public class DemoDataLoader {
         return authClient.getAccessToken()
                 .flatMap(token -> {
                     String getUrl = String.format(
-                            "%s/organizations/%s/environments/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=30000",
+                            "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=30000",
                             getBrokerUrl(region),
                             anypointConfig.getOrganizationId(),
                             environmentId,
@@ -408,7 +408,7 @@ public class DemoDataLoader {
         }
 
         String url = String.format(
-                "%s/organizations/%s/environments/%s/destinations/%s/messages/%s",
+                "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages/%s",
                 getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 environmentId,
