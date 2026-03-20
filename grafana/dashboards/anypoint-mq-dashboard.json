@@ -2296,6 +2296,312 @@
           }
         }
       ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 152
+      },
+      "id": 100,
+      "title": "\ud83d\udcca MQ API Usage (30-Day)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500000
+              },
+              {
+                "color": "red",
+                "value": 1000000
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 153
+      },
+      "id": 101,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "title": "Messages Sent (30d)",
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(anypoint_mq_usage_messages_sent_total{org=~\"$org\", environment=~\"$environment\"})",
+          "legendFormat": "{{environment}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500000
+              },
+              {
+                "color": "red",
+                "value": 1000000
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 8,
+        "y": 153
+      },
+      "id": 102,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "title": "Messages Received (30d)",
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"})",
+          "legendFormat": "{{environment}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 500000
+              },
+              {
+                "color": "red",
+                "value": 1000000
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 16,
+        "y": 153
+      },
+      "id": 103,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "orientation": "auto",
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "title": "Messages Acked (30d)",
+      "type": "gauge",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(anypoint_mq_usage_messages_acked_total{org=~\"$org\", environment=~\"$environment\"})",
+          "legendFormat": "{{environment}}"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 159
+      },
+      "id": 104,
+      "options": {
+        "barWidth": 0.5,
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none"
+      },
+      "title": "Usage by Environment",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "anypoint_mq_usage_messages_sent_total{org=~\"$org\", environment=~\"$environment\"}",
+          "legendFormat": "{{environment}} \u2014 Sent"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"}",
+          "legendFormat": "{{environment}} \u2014 Received"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "anypoint_mq_usage_messages_acked_total{org=~\"$org\", environment=~\"$environment\"}",
+          "legendFormat": "{{environment}} \u2014 Acked"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short",
+          "custom": {
+            "fillOpacity": 10,
+            "lineWidth": 2
+          }
+        }
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 159
+      },
+      "id": 105,
+      "options": {
+        "tooltip": {
+          "mode": "multi"
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "title": "Usage Trend (Sent / Received / Acked)",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(anypoint_mq_usage_messages_sent_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
+          "legendFormat": "{{environment}} \u2014 Sent"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
+          "legendFormat": "{{environment}} \u2014 Received"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(anypoint_mq_usage_messages_acked_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
+          "legendFormat": "{{environment}} \u2014 Acked"
+        }
+      ]
     }
   ],
   "refresh": "1m",

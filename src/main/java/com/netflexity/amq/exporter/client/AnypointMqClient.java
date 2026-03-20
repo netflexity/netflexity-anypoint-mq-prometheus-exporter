@@ -4,6 +4,7 @@ import com.netflexity.anypoint.common.client.AnypointAuthClient;
 import com.netflexity.anypoint.common.config.AnypointConfig;
 import com.netflexity.amq.exporter.model.Exchange;
 import com.netflexity.amq.exporter.model.ExchangeStats;
+import com.netflexity.amq.exporter.model.UsageStats;
 import com.netflexity.anypoint.common.model.Queue;
 import com.netflexity.anypoint.common.model.QueueStats;
 import lombok.extern.slf4j.Slf4j;
@@ -267,6 +268,47 @@ public class AnypointMqClient {
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
                 .doOnSuccess(stats -> log.debug("Successfully retrieved stats for exchange {}: {}", exchangeId, stats != null ? stats.toSafeString() : "null"))
                 .doOnError(error -> log.error("Failed to get stats for exchange {}: {}", exchangeId, error.getMessage()));
+    }
+
+    /**
+     * Get MQ API usage statistics for a specific environment.
+     * Calls: GET /mq/stats/api/v1/organizations/{orgId}/environments/{envId}
+     *        ?startDate=...&endDate=...&period=1day
+     * 
+     * Returns aggregate usage (messages sent, received, acked) across all queues.
+     *
+     * @param environmentId Environment ID
+     * @param lookbackDays Number of days to look back (default 30)
+     * @return Mono containing UsageStats
+     */
+    public Mono<UsageStats> getUsageStats(String environmentId, int lookbackDays) {
+        Instant endTime = Instant.now();
+        Instant startTime = endTime.minus(Duration.ofDays(lookbackDays));
+
+        String url = String.format("%s/mq/stats/api/v1/organizations/%s/environments/%s?startDate=%s&endDate=%s&period=1day",
+                anypointConfig.getBaseUrl(),
+                anypointConfig.getOrganizationId(),
+                environmentId,
+                ISO_FORMATTER.format(startTime),
+                ISO_FORMATTER.format(endTime));
+
+        log.debug("Getting usage stats for environment {} ({}d lookback)", environmentId, lookbackDays);
+
+        return authClient.getAccessToken()
+                .flatMap(token -> webClient.get()
+                        .uri(url)
+                        .header("Authorization", token.getAuthorizationHeader())
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get usage stats"))
+                        .bodyToMono(UsageStats.class))
+                .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
+                        .filter(this::isRetryableError))
+                .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
+                .doOnSuccess(stats -> log.debug("Usage stats for environment {}: {}", environmentId, stats != null ? stats.toSafeString() : "null"))
+                .onErrorResume(error -> {
+                    log.warn("Failed to get usage stats for environment {}: {}", environmentId, error.getMessage());
+                    return Mono.empty();
+                });
     }
 
     /**

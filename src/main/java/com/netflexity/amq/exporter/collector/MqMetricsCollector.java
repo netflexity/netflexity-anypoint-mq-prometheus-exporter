@@ -6,6 +6,7 @@ import com.netflexity.anypoint.common.config.ExporterConfig;
 import com.netflexity.amq.exporter.model.*;
 import com.netflexity.anypoint.common.model.Queue;
 import com.netflexity.anypoint.common.model.QueueStats;
+import com.netflexity.amq.exporter.model.UsageStats;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -127,11 +128,12 @@ public class MqMetricsCollector {
     private Mono<Void> collectEnvironmentRegionMetrics(AnypointConfig.Environment environment, String region) {
         log.debug("Collecting metrics for environment {} ({}) in region {}", environment.getName(), environment.getId(), region);
         
-        // Collect queue metrics and exchange metrics in parallel
+        // Collect queue metrics, exchange metrics, and usage stats in parallel
         Mono<Void> queueMetrics = collectQueueMetrics(environment, region);
         Mono<Void> exchangeMetrics = collectExchangeMetrics(environment, region);
+        Mono<Void> usageMetrics = collectUsageMetrics(environment);
         
-        return Mono.when(queueMetrics, exchangeMetrics)
+        return Mono.when(queueMetrics, exchangeMetrics, usageMetrics)
                 .doOnSuccess(v -> log.debug("Completed metrics collection for environment {} in region {}", environment.getName(), region))
                 .doOnError(error -> {
                     exporterMetrics.incrementErrorCounter("environment_failed");
@@ -223,6 +225,32 @@ public class MqMetricsCollector {
                     updateExchangeMetrics(stats, environmentName, orgName);
                 })
                 .then();
+    }
+
+    /**
+     * Collect MQ API usage statistics for an environment.
+     * Calls the Stats API usage endpoint (30-day lookback, period=1day).
+     */
+    private Mono<Void> collectUsageMetrics(AnypointConfig.Environment environment) {
+        String orgName = environment.getOrgName() != null ? environment.getOrgName() : "default";
+        return mqClient.getUsageStats(environment.getId(), 30)
+                .doOnNext(stats -> {
+                    updateGaugeMetric("anypoint_mq_usage_messages_sent_total",
+                            stats.getMessagesSent(),
+                            "org", orgName, "environment", environment.getName());
+                    updateGaugeMetric("anypoint_mq_usage_messages_received_total",
+                            stats.getMessagesReceived(),
+                            "org", orgName, "environment", environment.getName());
+                    updateGaugeMetric("anypoint_mq_usage_messages_acked_total",
+                            stats.getMessagesAcked(),
+                            "org", orgName, "environment", environment.getName());
+                    log.info("Updated usage metrics for environment {}: {}", environment.getName(), stats.toSafeString());
+                })
+                .then()
+                .onErrorResume(error -> {
+                    log.warn("Failed to collect usage metrics for environment {}: {}", environment.getName(), error.getMessage());
+                    return Mono.empty();
+                });
     }
 
     /**
@@ -356,6 +384,9 @@ public class MqMetricsCollector {
             case "anypoint_mq_queue_size_bytes" -> "Queue size in bytes";
             case "anypoint_mq_exchange_messages_published_total" -> "Total messages published to exchange";
             case "anypoint_mq_exchange_messages_delivered_total" -> "Total messages delivered from exchange";
+            case "anypoint_mq_usage_messages_sent_total" -> "Total MQ API messages sent (30-day usage)";
+            case "anypoint_mq_usage_messages_received_total" -> "Total MQ API messages received (30-day usage)";
+            case "anypoint_mq_usage_messages_acked_total" -> "Total MQ API messages acknowledged (30-day usage)";
             default -> "Anypoint MQ metric";
         };
     }

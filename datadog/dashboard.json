@@ -2271,6 +2271,189 @@
         "width": 12,
         "height": 8
       }
+    },
+    {
+      "definition": {
+        "title": "\ud83d\udcca MQ API Usage (30-Day)",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Messages Sent (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent_total{$org,$environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Messages Received (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_received_total{$org,$environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Messages Acked (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_acked_total{$org,$environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Usage by Environment",
+              "type": "toplist",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1",
+                      "limit": {
+                        "count": 10,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent_total{$org,$environment} by {environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Usage Trend (Sent / Received / Acked)",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent_total{$org,$environment} by {environment}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "dog_classic",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                },
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_received_total{$org,$environment} by {environment}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "cool",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                },
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_acked_total{$org,$environment} by {environment}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "line",
+                  "style": {
+                    "palette": "warm",
+                    "line_type": "solid",
+                    "line_width": "normal"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
     }
   ],
   "template_variables": [
