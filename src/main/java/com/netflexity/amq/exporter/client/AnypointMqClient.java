@@ -2,9 +2,7 @@ package com.netflexity.amq.exporter.client;
 
 import com.netflexity.anypoint.common.client.AnypointAuthClient;
 import com.netflexity.anypoint.common.config.AnypointConfig;
-import com.netflexity.amq.exporter.model.Exchange;
-import com.netflexity.amq.exporter.model.ExchangeStats;
-import com.netflexity.amq.exporter.model.UsageStats;
+import com.netflexity.amq.exporter.model.*;;
 import com.netflexity.anypoint.common.model.Queue;
 import com.netflexity.anypoint.common.model.QueueStats;
 import lombok.extern.slf4j.Slf4j;
@@ -307,6 +305,97 @@ public class AnypointMqClient {
                 .doOnSuccess(stats -> log.debug("Usage stats for environment {}: {}", environmentId, stats != null ? stats.toSafeString() : "null"))
                 .onErrorResume(error -> {
                     log.warn("Failed to get usage stats for environment {}: {}", environmentId, error.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    /**
+     * Query Anypoint Audit Logs for MQ-related changes.
+     * POST /audit/v2/organizations/{orgId}/query
+     * 
+     * Filters by platform "mq" to detect queue/exchange creation, deletion, modification.
+     *
+     * @param lookbackMinutes How far back to look for changes
+     * @return Flux of AuditLogEntry for MQ events
+     */
+    public Flux<AuditLogEntry> queryMqAuditLogs(int lookbackMinutes) {
+        Instant endTime = Instant.now();
+        Instant startTime = endTime.minus(Duration.ofMinutes(lookbackMinutes));
+
+        String url = String.format("%s/audit/v2/organizations/%s/query",
+                anypointConfig.getBaseUrl(),
+                anypointConfig.getOrganizationId());
+
+        Map<String, Object> queryBody = new java.util.LinkedHashMap<>();
+        queryBody.put("startDate", ISO_FORMATTER.format(startTime));
+        queryBody.put("endDate", ISO_FORMATTER.format(endTime));
+        queryBody.put("platforms", List.of("mq"));
+        queryBody.put("objectTypes", List.of());
+        queryBody.put("actions", List.of());
+        queryBody.put("objectIds", List.of());
+        queryBody.put("userIds", List.of());
+        queryBody.put("ascending", false);
+        queryBody.put("organizationId", anypointConfig.getOrganizationId());
+        queryBody.put("offset", 0);
+        queryBody.put("limit", 100);
+
+        log.debug("Querying MQ audit logs ({}m lookback)", lookbackMinutes);
+
+        return authClient.getAccessToken()
+                .flatMap(token -> webClient.post()
+                        .uri(url)
+                        .header("Authorization", token.getAuthorizationHeader())
+                        .bodyValue(queryBody)
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "query audit logs"))
+                        .bodyToMono(AuditQueryResponse.class))
+                .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
+                        .filter(this::isRetryableError))
+                .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
+                .flatMapMany(response -> {
+                    if (response == null || response.getData() == null) return Flux.empty();
+                    log.debug("Found {} MQ audit log entries", response.getData().size());
+                    return Flux.fromIterable(response.getData());
+                })
+                .onErrorResume(error -> {
+                    log.warn("Failed to query MQ audit logs: {}", error.getMessage());
+                    return Flux.empty();
+                });
+    }
+
+    /**
+     * Get MQ API usage statistics at the organization level (aggregate across all environments).
+     * Calls: GET /mq/stats/api/v1/organizations/{orgId}
+     *        ?startDate=...&endDate=...&period=1day
+     *
+     * @param lookbackDays Number of days to look back
+     * @return Mono containing UsageStats
+     */
+    public Mono<UsageStats> getOrgUsageStats(int lookbackDays) {
+        Instant endTime = Instant.now();
+        Instant startTime = endTime.minus(Duration.ofDays(lookbackDays));
+
+        String url = String.format("%s/mq/stats/api/v1/organizations/%s?startDate=%s&endDate=%s&period=1day",
+                anypointConfig.getBaseUrl(),
+                anypointConfig.getOrganizationId(),
+                ISO_FORMATTER.format(startTime),
+                ISO_FORMATTER.format(endTime));
+
+        log.debug("Getting org-level usage stats ({}d lookback)", lookbackDays);
+
+        return authClient.getAccessToken()
+                .flatMap(token -> webClient.get()
+                        .uri(url)
+                        .header("Authorization", token.getAuthorizationHeader())
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get org usage stats"))
+                        .bodyToMono(UsageStats.class))
+                .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
+                        .filter(this::isRetryableError))
+                .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
+                .doOnSuccess(stats -> log.debug("Org usage stats: {}", stats != null ? stats.toSafeString() : "null"))
+                .onErrorResume(error -> {
+                    log.warn("Failed to get org usage stats: {}", error.getMessage());
                     return Mono.empty();
                 });
     }

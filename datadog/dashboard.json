@@ -2454,6 +2454,279 @@
           }
         ]
       }
+    },
+    {
+      "definition": {
+        "title": "\ud83d\udcb0 Billing & API Requests",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Billable Units by Env (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_billable_units_total{$org,$environment} by {environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "API Requests by Env (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_api_requests_total{$org,$environment} by {environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Org-Level Billable Units (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_org_usage_billable_units_total{$org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Org-Level API Requests (30d)",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_org_usage_api_requests_total{$org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "\ud83d\udd04 Queue Health & QoS",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "Dequeue Rate by Queue (%)",
+              "type": "toplist",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1",
+                      "limit": {
+                        "count": 20,
+                        "order": "asc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_dequeue_rate_percent{$org,$environment} by {queue_name}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            }
+          },
+          {
+            "definition": {
+              "title": "Stale Messages Detected",
+              "type": "toplist",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1",
+                      "limit": {
+                        "count": 20,
+                        "order": "desc"
+                      }
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_stale_messages{$org,$environment} by {queue_name}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "\ud83d\udccb Audit Log (Config Changes)",
+        "type": "group",
+        "layout_type": "ordered",
+        "widgets": [
+          {
+            "definition": {
+              "title": "MQ Config Changes",
+              "type": "query_value",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_audit_changes_total{$org}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar"
+                }
+              ],
+              "precision": 0
+            }
+          },
+          {
+            "definition": {
+              "title": "Changes Over Time",
+              "type": "timeseries",
+              "requests": [
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_audit_creates{$org}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": {
+                    "palette": "dog_classic"
+                  }
+                },
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_audit_deletes{$org}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": {
+                    "palette": "warm"
+                  }
+                },
+                {
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "queries": [
+                    {
+                      "name": "query1",
+                      "data_source": "metrics",
+                      "query": "sum:anypoint_mq.anypoint_mq_audit_updates{$org}"
+                    }
+                  ],
+                  "response_format": "timeseries",
+                  "display_type": "bars",
+                  "style": {
+                    "palette": "cool"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
     }
   ],
   "template_variables": [

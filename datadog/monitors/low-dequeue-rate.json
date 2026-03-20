@@ -1,0 +1,16 @@
+{
+  "name": "[Anypoint MQ] Low Dequeue Rate - {{queue_name.name}}",
+  "type": "metric alert",
+  "query": "avg(last_10m):avg:anypoint_mq.anypoint_mq_queue_dequeue_rate_percent{*} by {queue_name} < 50",
+  "message": "Queue {{queue_name.name}} in environment {{environment.name}} has a dequeue rate of {{value}}%.\n\nThis means consumers are falling behind producers. Check consumer health and processing capacity.\n\n@slack-alerts",
+  "tags": ["service:anypoint-mq", "monitor:dequeue-rate"],
+  "options": {
+    "thresholds": {
+      "critical": 50,
+      "warning": 75
+    },
+    "notify_no_data": false,
+    "renotify_interval": 30,
+    "evaluation_delay": 60
+  }
+}

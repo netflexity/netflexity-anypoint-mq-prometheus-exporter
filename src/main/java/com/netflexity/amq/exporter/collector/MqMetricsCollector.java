@@ -6,7 +6,6 @@ import com.netflexity.anypoint.common.config.ExporterConfig;
 import com.netflexity.amq.exporter.model.*;
 import com.netflexity.anypoint.common.model.Queue;
 import com.netflexity.anypoint.common.model.QueueStats;
-import com.netflexity.amq.exporter.model.UsageStats;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -100,13 +99,19 @@ public class MqMetricsCollector {
         Timer.Sample sample = exporterMetrics.startScrapeTimer();
         
         try {
-            // Process all environments and regions
-            Flux.fromIterable(anypointConfig.getEnvironments())
+            // Process all environments and regions + org-level usage
+            Mono<Void> envMetrics = Flux.fromIterable(anypointConfig.getEnvironments())
                     .flatMap(environment -> 
                             Flux.fromIterable(anypointConfig.getRegions())
                                     .flatMap(region -> collectEnvironmentRegionMetrics(environment, region))
                     )
-                    .doOnComplete(() -> {
+                    .then();
+
+            Mono<Void> orgUsage = collectOrgUsageMetrics();
+            Mono<Void> auditMetrics = collectAuditLogMetrics();
+
+            Mono.when(envMetrics, orgUsage, auditMetrics)
+                    .doOnSuccess(v -> {
                         exporterMetrics.recordScrapeTime(sample);
                         log.info("Metrics collection completed successfully");
                     })
@@ -228,6 +233,82 @@ public class MqMetricsCollector {
     }
 
     /**
+     * Collect MQ audit log metrics — counts of config changes (create/delete/update)
+     * detected in the last scrape interval. Maps to MuleSoft audit-detect-mq-changes monitor.
+     */
+    private Mono<Void> collectAuditLogMetrics() {
+        // Look back 2x the scrape interval to avoid missing events between scrapes
+        int lookbackMinutes = Math.max((anypointConfig.getScrape().getIntervalSeconds() * 2) / 60, 5);
+
+        return mqClient.queryMqAuditLogs(lookbackMinutes)
+                .collectList()
+                .doOnNext(entries -> {
+                    String orgName = anypointConfig.getOrganizationId();
+                    if (!anypointConfig.getEnvironments().isEmpty()) {
+                        String envOrgName = anypointConfig.getEnvironments().get(0).getOrgName();
+                        if (envOrgName != null) orgName = envOrgName;
+                    }
+
+                    // Count by action type
+                    long creates = entries.stream().filter(e -> "Create".equalsIgnoreCase(e.getAction())).count();
+                    long deletes = entries.stream().filter(e -> "Delete".equalsIgnoreCase(e.getAction())).count();
+                    long updates = entries.stream().filter(e -> "Update".equalsIgnoreCase(e.getAction())).count();
+
+                    updateGaugeMetric("anypoint_mq_audit_changes_total",
+                            (long) entries.size(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_audit_creates",
+                            creates, "org", orgName);
+                    updateGaugeMetric("anypoint_mq_audit_deletes",
+                            deletes, "org", orgName);
+                    updateGaugeMetric("anypoint_mq_audit_updates",
+                            updates, "org", orgName);
+
+                    if (!entries.isEmpty()) {
+                        log.info("MQ audit log: {} changes detected (creates={}, deletes={}, updates={}) in last {}m",
+                                entries.size(), creates, deletes, updates, lookbackMinutes);
+                    } else {
+                        log.debug("No MQ audit log changes in last {}m", lookbackMinutes);
+                    }
+                })
+                .then()
+                .onErrorResume(error -> {
+                    log.warn("Failed to collect audit log metrics: {}", error.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    /**
+     * Collect org-level MQ API usage statistics (aggregate across all environments).
+     */
+    private Mono<Void> collectOrgUsageMetrics() {
+        return mqClient.getOrgUsageStats(30)
+                .doOnNext(stats -> {
+                    String orgName = anypointConfig.getOrganizationId();
+                    // Use first environment's orgName if available, else orgId
+                    if (!anypointConfig.getEnvironments().isEmpty()) {
+                        String envOrgName = anypointConfig.getEnvironments().get(0).getOrgName();
+                        if (envOrgName != null) orgName = envOrgName;
+                    }
+                    updateGaugeMetric("anypoint_mq_org_usage_messages_sent_total",
+                            stats.getMessagesSent(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_org_usage_messages_received_total",
+                            stats.getMessagesReceived(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_org_usage_messages_acked_total",
+                            stats.getMessagesAcked(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_org_usage_billable_units_total",
+                            stats.getBillableUnitCount(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_org_usage_api_requests_total",
+                            stats.getApiRequestCount(), "org", orgName);
+                    log.info("Updated org-level usage metrics: {}", stats.toSafeString());
+                })
+                .then()
+                .onErrorResume(error -> {
+                    log.warn("Failed to collect org usage metrics: {}", error.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    /**
      * Collect MQ API usage statistics for an environment.
      * Calls the Stats API usage endpoint (30-day lookback, period=1day).
      */
@@ -243,6 +324,12 @@ public class MqMetricsCollector {
                             "org", orgName, "environment", environment.getName());
                     updateGaugeMetric("anypoint_mq_usage_messages_acked_total",
                             stats.getMessagesAcked(),
+                            "org", orgName, "environment", environment.getName());
+                    updateGaugeMetric("anypoint_mq_usage_billable_units_total",
+                            stats.getBillableUnitCount(),
+                            "org", orgName, "environment", environment.getName());
+                    updateGaugeMetric("anypoint_mq_usage_api_requests_total",
+                            stats.getApiRequestCount(),
                             "org", orgName, "environment", environment.getName());
                     log.info("Updated usage metrics for environment {}: {}", environment.getName(), stats.toSafeString());
                 })
@@ -396,6 +483,17 @@ public class MqMetricsCollector {
             case "anypoint_mq_usage_messages_sent_total" -> "Total MQ API messages sent (30-day usage)";
             case "anypoint_mq_usage_messages_received_total" -> "Total MQ API messages received (30-day usage)";
             case "anypoint_mq_usage_messages_acked_total" -> "Total MQ API messages acknowledged (30-day usage)";
+            case "anypoint_mq_usage_billable_units_total" -> "Total MQ billable units (30-day usage)";
+            case "anypoint_mq_usage_api_requests_total" -> "Total MQ API requests (30-day usage)";
+            case "anypoint_mq_org_usage_messages_sent_total" -> "Org-level MQ messages sent (30-day)";
+            case "anypoint_mq_org_usage_messages_received_total" -> "Org-level MQ messages received (30-day)";
+            case "anypoint_mq_org_usage_messages_acked_total" -> "Org-level MQ messages acknowledged (30-day)";
+            case "anypoint_mq_org_usage_billable_units_total" -> "Org-level MQ billable units (30-day)";
+            case "anypoint_mq_org_usage_api_requests_total" -> "Org-level MQ API requests (30-day)";
+            case "anypoint_mq_audit_changes_total" -> "Total MQ config changes detected in audit log";
+            case "anypoint_mq_audit_creates" -> "MQ destinations created (from audit log)";
+            case "anypoint_mq_audit_deletes" -> "MQ destinations deleted (from audit log)";
+            case "anypoint_mq_audit_updates" -> "MQ destinations updated (from audit log)";
             default -> "Anypoint MQ metric";
         };
     }

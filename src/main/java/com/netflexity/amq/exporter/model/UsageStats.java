@@ -23,6 +23,8 @@ public class UsageStats {
     private long messagesSent = 0L;
     private long messagesReceived = 0L;
     private long messagesAcked = 0L;
+    private long billableUnitCount = 0L;
+    private long apiRequestCount = 0L;
 
     @JsonSetter("messagesSent")
     public void setMessagesSent(Object value) {
@@ -37,6 +39,16 @@ public class UsageStats {
     @JsonSetter("messagesAcked") 
     public void setMessagesAcked(Object value) {
         this.messagesAcked = sumTimeSeries(value);
+    }
+
+    @JsonSetter("billableUnitCount")
+    public void setBillableUnitCount(Object value) {
+        this.billableUnitCount = sumTimeSeries(value);
+    }
+
+    @JsonSetter("apiRequestCount")
+    public void setApiRequestCount(Object value) {
+        this.apiRequestCount = sumTimeSeries(value);
     }
 
     /**
@@ -63,7 +75,8 @@ public class UsageStats {
     }
 
     public String toSafeString() {
-        return "UsageStats{sent=" + messagesSent + ", received=" + messagesReceived + ", acked=" + messagesAcked + "}";
+        return "UsageStats{sent=" + messagesSent + ", received=" + messagesReceived + ", acked=" + messagesAcked 
+                + ", billableUnits=" + billableUnitCount + ", apiRequests=" + apiRequestCount + "}";
     }
 
     @Override

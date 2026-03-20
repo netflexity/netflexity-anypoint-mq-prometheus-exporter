@@ -48,6 +48,7 @@ anypoint:
     intervalSeconds: ${SCRAPE_INTERVAL_SECONDS:60}
     periodSeconds: 600
     enabled: true
+    staleCheckIntervalMs: ${STALE_CHECK_INTERVAL_MS:300000}  # 5 minutes
   http:
     connectTimeoutSeconds: 30
     readTimeoutSeconds: 60
