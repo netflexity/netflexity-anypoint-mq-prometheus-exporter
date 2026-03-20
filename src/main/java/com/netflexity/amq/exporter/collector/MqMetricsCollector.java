@@ -290,6 +290,14 @@ public class MqMetricsCollector {
                     stats.getQueueSize(),
                     "queue_name", queueName, "environment", environmentName, "region", region);
         }
+
+        // Dequeue rate: (received / sent) * 100 — key QoS metric from MuleSoft monitors
+        long sent = stats.getMessagesSent() != null ? stats.getMessagesSent() : 0L;
+        long received = stats.getMessagesReceived() != null ? stats.getMessagesReceived() : 0L;
+        long dequeueRate = sent > 0 ? Math.round(((double) received / sent) * 100.0) : 100L;
+        updateGaugeMetric("anypoint_mq_queue_dequeue_rate_percent",
+                dequeueRate,
+                "org", orgName, "queue_name", queueName, "environment", environmentName, "region", region);
         
         log.debug("Updated metrics for queue {}: in_queue={}, in_flight={}, sent={}, received={}, acked={}",
                 queueName, stats.getMessagesInQueue(), stats.getMessagesInFlight(), 
@@ -384,6 +392,7 @@ public class MqMetricsCollector {
             case "anypoint_mq_queue_size_bytes" -> "Queue size in bytes";
             case "anypoint_mq_exchange_messages_published_total" -> "Total messages published to exchange";
             case "anypoint_mq_exchange_messages_delivered_total" -> "Total messages delivered from exchange";
+            case "anypoint_mq_queue_dequeue_rate_percent" -> "Queue dequeue rate (received/sent * 100)";
             case "anypoint_mq_usage_messages_sent_total" -> "Total MQ API messages sent (30-day usage)";
             case "anypoint_mq_usage_messages_received_total" -> "Total MQ API messages received (30-day usage)";
             case "anypoint_mq_usage_messages_acked_total" -> "Total MQ API messages acknowledged (30-day usage)";
