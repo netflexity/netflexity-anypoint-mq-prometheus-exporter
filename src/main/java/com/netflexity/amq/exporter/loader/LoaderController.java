@@ -141,4 +141,15 @@ public class LoaderController {
         return ResponseEntity.ok(Map.of(
                 "running", loader.isRunning()));
     }
+
+    /**
+     * Debug: Try publishing a single message to a specific queue and return the raw result/error.
+     */
+    @PostMapping("/test")
+    public Mono<ResponseEntity<Map<String, Object>>> test(
+            @RequestParam(defaultValue = "nfx-mq-loader-q") String queue,
+            @RequestParam(defaultValue = "Sandbox") String environment) {
+        return loader.testPublish(queue, environment)
+                .map(result -> ResponseEntity.ok(result));
+    }
 }

@@ -175,6 +175,63 @@ public class DemoDataLoader {
         return running.get();
     }
 
+    /**
+     * Debug method: try publishing a single message and return the raw response or error.
+     */
+    public Mono<Map<String, Object>> testPublish(String queueId, String environmentName) {
+        // Find the environment
+        AnypointConfig.Environment env = anypointConfig.getEnvironments().stream()
+                .filter(e -> e.getName().equalsIgnoreCase(environmentName))
+                .findFirst()
+                .orElse(null);
+
+        if (env == null) {
+            return Mono.just(Map.of("error", "Environment not found: " + environmentName,
+                    "availableEnvironments", anypointConfig.getEnvironments().stream()
+                            .map(AnypointConfig.Environment::getName).toList()));
+        }
+
+        String region = anypointConfig.getRegions().isEmpty() ? "us-east-1" : anypointConfig.getRegions().get(0);
+        String brokerUrl = getBrokerUrl(region);
+
+        List<Map<String, Object>> messages = List.of(Map.of(
+                "headers", Map.of("messageId", UUID.randomUUID().toString(), "ttl", 120000),
+                "properties", Map.of("source", "test"),
+                "body", "{\"test\":true}"
+        ));
+
+        String url = String.format(
+                "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages",
+                brokerUrl, anypointConfig.getOrganizationId(), env.getId(), region, queueId);
+
+        return authClient.getAccessToken()
+                .flatMap(token -> webClient.put()
+                        .uri(url)
+                        .header("Authorization", token.getAuthorizationHeader())
+                        .header("X-ANYPNT-ORG-ID", anypointConfig.getOrganizationId())
+                        .header("X-ANYPNT-ENV-ID", env.getId())
+                        .bodyValue(messages)
+                        .exchangeToMono(response -> response.bodyToMono(String.class)
+                                .defaultIfEmpty("")
+                                .map(body -> {
+                                    Map<String, Object> result = new LinkedHashMap<>();
+                                    result.put("url", url);
+                                    result.put("brokerUrl", brokerUrl);
+                                    result.put("region", region);
+                                    result.put("environmentId", env.getId());
+                                    result.put("environmentName", env.getName());
+                                    result.put("queueId", queueId);
+                                    result.put("statusCode", response.statusCode().value());
+                                    result.put("responseBody", body);
+                                    result.put("success", response.statusCode().is2xxSuccessful());
+                                    return result;
+                                })))
+                .onErrorResume(e -> Mono.just(Map.of(
+                        "error", e.getClass().getSimpleName() + ": " + e.getMessage(),
+                        "url", url,
+                        "brokerUrl", brokerUrl)));
+    }
+
     // --- Internal methods ---
 
     private Mono<Void> loadEnvironmentRegion(AnypointConfig.Environment env, String region,
