@@ -127,7 +127,7 @@ public class StaleMessageDetector {
 
         // Browse messages (non-destructive peek — we'll release locks after)
         String browseUrl = String.format(
-                "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=10000",
+                "%s/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=10000",
                 getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 env.getId(),
@@ -200,7 +200,7 @@ public class StaleMessageDetector {
         if (lockInfos.isEmpty()) return Mono.empty();
 
         String url = String.format(
-                "%s/mq/broker/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages/locks",
+                "%s/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages/locks",
                 getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 environmentId,
