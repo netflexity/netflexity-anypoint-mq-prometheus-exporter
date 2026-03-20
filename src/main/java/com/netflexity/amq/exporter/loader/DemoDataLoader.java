@@ -201,8 +201,8 @@ public class DemoDataLoader {
         ));
 
         String url = String.format(
-                "%s/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages",
-                brokerUrl, anypointConfig.getOrganizationId(), env.getId(), region, queueId);
+                "%s/organizations/%s/environments/%s/destinations/%s/messages",
+                brokerUrl, anypointConfig.getOrganizationId(), env.getId(), queueId);
 
         return authClient.getAccessToken()
                 .flatMap(token -> webClient.put()
@@ -321,11 +321,10 @@ public class DemoDataLoader {
                                 }
 
                                 String url = String.format(
-                                        "%s/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages",
+                                        "%s/organizations/%s/environments/%s/destinations/%s/messages",
                                         getBrokerUrl(region),
                                         anypointConfig.getOrganizationId(),
                                         environmentId,
-                                        region,
                                         queueId);
 
                                 return webClient.put()
@@ -361,11 +360,10 @@ public class DemoDataLoader {
         return authClient.getAccessToken()
                 .flatMap(token -> {
                     String getUrl = String.format(
-                            "%s/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=30000",
+                            "%s/organizations/%s/environments/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=30000",
                             getBrokerUrl(region),
                             anypointConfig.getOrganizationId(),
                             environmentId,
-                            region,
                             queueId);
 
                     // Poll up to 20 rounds (200 messages max) to drain the queue
@@ -410,11 +408,10 @@ public class DemoDataLoader {
         }
 
         String url = String.format(
-                "%s/api/v1/organizations/%s/environments/%s/regions/%s/destinations/%s/messages/%s",
+                "%s/organizations/%s/environments/%s/destinations/%s/messages/%s",
                 getBrokerUrl(region),
                 anypointConfig.getOrganizationId(),
                 environmentId,
-                region,
                 queueId,
                 messageId);
 
