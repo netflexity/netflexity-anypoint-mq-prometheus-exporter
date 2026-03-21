@@ -626,5 +626,6 @@ Apache License 2.0 — see [LICENSE](LICENSE) for details.
 ---
 
 <p align="center">
-  Built by <a href="https://netflexity.com">Netflexity</a>
+  Built by <a href="https://netflexity.com">Netflexity</a> — MuleSoft integration specialists<br>
+  Need help with deployment or custom monitoring? <a href="mailto:hello@netflexity.com">hello@netflexity.com</a>
 </p>
