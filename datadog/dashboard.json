@@ -50,13 +50,13 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue{*} by {queue_name}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
                   "formulas": [
                     {
-                      "formula": "count_nonzero(query1)"
+                      "formula": "count_nonzero(query1 + 1)"
                     }
                   ],
                   "response_format": "scalar"
