@@ -1,16 +1,44 @@
 {
   "title": "Anypoint MQ \u2014 Queue & Exchange Monitoring",
   "description": "Real-time monitoring of MuleSoft Anypoint MQ queues and exchanges.\nPowered by the Netflexity Anypoint MQ Prometheus Exporter.\nhttps://github.com/netflexity/netflexity-anypoint-mq-prometheus-exporter",
+  "layout_type": "ordered",
+  "template_variables": [
+    {
+      "name": "org",
+      "prefix": "org",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "environment",
+      "prefix": "environment",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "region",
+      "prefix": "region",
+      "available_values": [],
+      "default": "*"
+    },
+    {
+      "name": "queue",
+      "prefix": "queue_name",
+      "available_values": [],
+      "default": "*"
+    }
+  ],
   "widgets": [
     {
       "id": 100,
       "definition": {
-        "type": "group",
         "title": "Overview",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 3004662441263704,
             "definition": {
               "title": "Total Queues",
               "title_size": "16",
@@ -22,13 +50,13 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq.anypoint_mq_queue{$org,$environment,$region}",
-                      "aggregator": "avg"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue{$org,$environment,$region} by {queue_name}",
+                      "aggregator": "last"
                     }
                   ],
                   "formulas": [
                     {
-                      "formula": "query1"
+                      "formula": "count_nonzero(query1)"
                     }
                   ],
                   "response_format": "scalar"
@@ -36,15 +64,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 5746772490748779,
             "definition": {
               "title": "Total Messages Queued",
               "title_size": "16",
@@ -70,15 +93,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 2,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 6613841104340295,
             "definition": {
               "title": "In Flight",
               "title_size": "16",
@@ -103,17 +121,12 @@
                 }
               ],
               "autoscale": true,
-              "precision": 0,
-              "custom_unit": "msg"
-            },
-            "layout": {
-              "x": 4,
-              "y": 0,
-              "width": 2,
-              "height": 2
+              "custom_unit": "msg",
+              "precision": 0
             }
           },
           {
+            "id": 901463256375084,
             "definition": {
               "title": "DLQ Messages",
               "title_size": "16",
@@ -157,15 +170,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 2314283423224095,
             "definition": {
               "title": "Environments",
               "title_size": "16",
@@ -191,15 +199,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 6849255685493327,
             "definition": {
               "title": "Exchanges",
               "title_size": "16",
@@ -225,56 +228,47 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 10,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 0,
-        "width": 12,
-        "height": 3
       }
     },
     {
       "id": 200,
       "definition": {
-        "type": "group",
         "title": "Queue Depth & Backlog",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 521703641205997,
             "definition": {
               "title": "Messages In Queue (Top 10)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
                   "formulas": [
                     {
-                      "formula": "query1"
+                      "formula": "top(query1, 10, 'last', 'desc')"
                     }
                   ],
                   "queries": [
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "top(avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}, 10, 'last', 'desc')"
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name}"
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "dog_classic",
                     "line_type": "solid",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
@@ -283,39 +277,25 @@
               },
               "markers": [
                 {
+                  "label": "Warning (1K)",
                   "value": "y = 1000",
-                  "display_type": "warning dashed",
-                  "label": "Warning (1K)"
+                  "display_type": "warning dashed"
                 },
                 {
+                  "label": "Critical (10K)",
                   "value": "y = 10000",
-                  "display_type": "error dashed",
-                  "label": "Critical (10K)"
+                  "display_type": "error dashed"
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 8,
-              "height": 4
             }
           },
           {
+            "id": 3439079391926889,
             "definition": {
               "title": "Queue Depth Distribution",
               "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "query1",
-                      "limit": {
-                        "count": 20,
-                        "order": "desc"
-                      }
-                    }
-                  ],
                   "queries": [
                     {
                       "data_source": "metrics",
@@ -324,20 +304,32 @@
                       "aggregator": "last"
                     }
                   ],
-                  "response_format": "scalar"
+                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 4
             }
           },
           {
+            "id": 3218093816997050,
             "definition": {
               "title": "Messages In Flight",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -354,25 +346,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "warm"
-                  }
+                  },
+                  "display_type": "bars"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 0,
-              "y": 4,
-              "width": 6,
-              "height": 3
             }
           },
           {
+            "id": 3600137678637076,
             "definition": {
               "title": "Queue Backlog Change (1h)",
               "type": "change",
@@ -398,34 +385,25 @@
                   "order_dir": "desc"
                 }
               ]
-            },
-            "layout": {
-              "x": 6,
-              "y": 4,
-              "width": 6,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 3,
-        "width": 12,
-        "height": 8
       }
     },
     {
       "id": 300,
       "definition": {
-        "type": "group",
         "title": "Throughput",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 3439395466605506,
             "definition": {
               "title": "Messages Sent (Published)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -442,23 +420,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "cool"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 4,
-              "height": 3
             }
           },
           {
+            "id": 4004178028112154,
             "definition": {
               "title": "Messages Received (Consumed)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -475,23 +450,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "purple"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 4,
-              "y": 0,
-              "width": 4,
-              "height": 3
             }
           },
           {
+            "id": 2675322353968418,
             "definition": {
               "title": "Messages Acknowledged",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -508,23 +480,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "green"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 3
             }
           },
           {
+            "id": 8454172169366737,
             "definition": {
               "title": "Processing Rate \u2014 Sent vs Acked",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -551,25 +520,22 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "dog_classic",
                     "line_type": "solid",
                     "line_width": "thick"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 3,
-              "width": 6,
-              "height": 3
             }
           },
           {
+            "id": 8620146807905487,
             "definition": {
               "title": "Unacknowledged Gap (Sent - Acked)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -592,44 +558,35 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "area",
                   "style": {
                     "palette": "orange"
-                  }
+                  },
+                  "display_type": "area"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 6,
-              "y": 3,
-              "width": 6,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 11,
-        "width": 12,
-        "height": 7
       }
     },
     {
       "id": 400,
       "definition": {
-        "type": "group",
         "title": "Dead Letter Queues",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 5621035776948134,
             "definition": {
               "title": "DLQ \u2014 Messages Over Time",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -656,39 +613,25 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "red"
-                  }
+                  },
+                  "display_type": "bars"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 8,
-              "height": 3
             }
           },
           {
+            "id": 7998139608457585,
             "definition": {
               "title": "DLQ Breakdown",
               "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "query1",
-                      "limit": {
-                        "count": 10,
-                        "order": "desc"
-                      }
-                    }
-                  ],
                   "queries": [
                     {
                       "data_source": "metrics",
@@ -704,37 +647,43 @@
                       "value": 0,
                       "palette": "white_on_red"
                     }
-                  ]
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 18,
-        "width": 12,
-        "height": 4
       }
     },
     {
       "id": 500,
       "definition": {
-        "type": "group",
         "title": "Exchanges",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 8461506443273226,
             "definition": {
               "title": "Messages Published to Exchanges",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -751,23 +700,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "cool"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 6,
-              "height": 3
             }
           },
           {
+            "id": 2431921103314590,
             "definition": {
               "title": "Messages Delivered from Exchanges",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -784,23 +730,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "warm"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 6,
-              "height": 3
             }
           },
           {
+            "id": 7058341406355847,
             "definition": {
               "title": "Exchange Fan-out Ratio (Delivered / Published)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -823,49 +766,71 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "green",
                     "line_type": "solid",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 0,
-              "y": 3,
-              "width": 12,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 22,
-        "width": 12,
-        "height": 7
       }
     },
     {
       "id": 600,
       "definition": {
-        "type": "group",
         "title": "Queue Inventory",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 3573789958505256,
             "definition": {
               "title": "All Queues \u2014 Current State",
               "type": "query_table",
               "requests": [
                 {
+                  "queries": [
+                    {
+                      "data_source": "metrics",
+                      "name": "query1",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query2",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query3",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query4",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    },
+                    {
+                      "data_source": "metrics",
+                      "name": "query5",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$org,$environment,$region} by {queue_name,environment}",
+                      "aggregator": "last"
+                    }
+                  ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
                       "formula": "query1",
@@ -908,69 +873,25 @@
                       "formula": "query3 - query5",
                       "alias": "Unacked"
                     }
-                  ],
-                  "queries": [
-                    {
-                      "data_source": "metrics",
-                      "name": "query1",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name,environment}",
-                      "aggregator": "last"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "query2",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_flight{$org,$environment,$region} by {queue_name,environment}",
-                      "aggregator": "last"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "query3",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment,$region} by {queue_name,environment}",
-                      "aggregator": "last"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "query4",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_received{$org,$environment,$region} by {queue_name,environment}",
-                      "aggregator": "last"
-                    },
-                    {
-                      "data_source": "metrics",
-                      "name": "query5",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue_messages_acked{$org,$environment,$region} by {queue_name,environment}",
-                      "aggregator": "last"
-                    }
-                  ],
-                  "response_format": "scalar"
+                  ]
                 }
               ],
               "has_search_bar": "auto"
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 12,
-              "height": 5
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 29,
-        "width": 12,
-        "height": 6
       }
     },
     {
       "id": 700,
       "definition": {
-        "type": "group",
         "title": "Monitors (Pro)",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 6042263733663429,
             "definition": {
               "title": "Monitor Evaluations",
               "type": "query_value",
@@ -994,15 +915,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 3,
-              "height": 2
             }
           },
           {
+            "id": 3911992195517066,
             "definition": {
               "title": "Notifications Sent",
               "type": "query_value",
@@ -1026,17 +942,14 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 3,
-              "y": 0,
-              "width": 3,
-              "height": 2
             }
           },
           {
+            "id": 624176431444952,
             "definition": {
               "title": "Triggered Monitors",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1053,10 +966,10 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "red"
-                  }
+                  },
+                  "display_type": "bars"
                 }
               ],
               "yaxis": {
@@ -1064,34 +977,25 @@
                 "min": "0",
                 "max": "1.1"
               }
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 6,
-              "height": 2
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 35,
-        "width": 12,
-        "height": 3
       }
     },
     {
       "id": 800,
       "definition": {
-        "type": "group",
         "title": "Exporter Health",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 4284022637114865,
             "definition": {
               "title": "Scrape Duration (seconds)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1108,27 +1012,24 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "grey"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 3,
-              "height": 3
             }
           },
           {
+            "id": 7916744412851760,
             "definition": {
               "title": "Scrape Errors",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1145,25 +1046,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "red"
-                  }
+                  },
+                  "display_type": "bars"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 3,
-              "y": 0,
-              "width": 3,
-              "height": 3
             }
           },
           {
+            "id": 7954758670577513,
             "definition": {
               "title": "Exporter Uptime",
               "type": "query_value",
@@ -1186,19 +1082,16 @@
                 }
               ],
               "autoscale": false,
-              "precision": 1,
-              "custom_unit": "hrs"
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 2,
-              "height": 3
+              "custom_unit": "hrs",
+              "precision": 1
             }
           },
           {
+            "id": 3562061973264459,
             "definition": {
               "title": "JVM Heap Used (MB)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1225,23 +1118,20 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "area",
                   "style": {
                     "palette": "cool"
-                  }
+                  },
+                  "display_type": "area"
                 }
               ]
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 3
             }
           },
           {
+            "id": 7273137072052333,
             "definition": {
               "title": "CPU Usage",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1268,10 +1158,10 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "warm"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
@@ -1279,17 +1169,14 @@
                 "min": "0",
                 "max": "100"
               }
-            },
-            "layout": {
-              "x": 0,
-              "y": 3,
-              "width": 6,
-              "height": 3
             }
           },
           {
+            "id": 186566426502658,
             "definition": {
               "title": "JVM Threads",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1325,41 +1212,35 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "cool"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 6,
-              "y": 3,
-              "width": 6,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 38,
-        "width": 12,
-        "height": 7
       }
     },
     {
       "id": 900,
       "definition": {
-        "type": "group",
         "title": "\ud83d\uddfa\ufe0f Queue Health Heatmap",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 2910577410676127,
             "definition": {
               "title": "Queue Health Status (depth over time)",
+              "show_legend": false,
               "type": "heatmap",
+              "yaxis": {
+                "include_zero": true,
+                "min": "0"
+              },
               "requests": [
                 {
                   "queries": [
@@ -1374,20 +1255,11 @@
                     "palette": "dog_classic"
                   }
                 }
-              ],
-              "yaxis": {
-                "include_zero": true,
-                "min": "0"
-              }
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 12,
-              "height": 4
+              ]
             }
           },
           {
+            "id": 8837188953061036,
             "definition": {
               "title": "Queue Depth Distribution",
               "type": "toplist",
@@ -1399,15 +1271,6 @@
                       "name": "query1",
                       "query": "avg:anypoint_mq.anypoint_mq_queue_messages_in_queue{$org,$environment,$region} by {queue_name,environment}",
                       "aggregator": "last"
-                    }
-                  ],
-                  "formulas": [
-                    {
-                      "formula": "query1",
-                      "limit": {
-                        "count": 20,
-                        "order": "desc"
-                      }
                     }
                   ],
                   "response_format": "scalar",
@@ -1427,35 +1290,39 @@
                       "value": 1000,
                       "palette": "white_on_green"
                     }
-                  ]
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 4,
-              "width": 12,
-              "height": 4
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 45,
-        "width": 12,
-        "height": 9
       }
     },
     {
       "id": 901,
       "definition": {
-        "type": "group",
         "title": "\ud83d\udcca Consumer Lag",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 2019100860330680,
             "definition": {
               "title": "Consumer Lag (Sent \u2212 Acked)",
               "type": "toplist",
@@ -1475,15 +1342,6 @@
                       "aggregator": "last"
                     }
                   ],
-                  "formulas": [
-                    {
-                      "formula": "sent - acked",
-                      "limit": {
-                        "count": 20,
-                        "order": "desc"
-                      }
-                    }
-                  ],
                   "response_format": "scalar",
                   "conditional_formats": [
                     {
@@ -1501,20 +1359,32 @@
                       "value": 0,
                       "palette": "white_on_green"
                     }
-                  ]
+                  ],
+                  "formulas": [
+                    {
+                      "formula": "sent - acked"
+                    }
+                  ],
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 6,
-              "height": 4
             }
           },
           {
+            "id": 6498569774921302,
             "definition": {
               "title": "Consumer Lag Over Time",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1537,44 +1407,35 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "area",
                   "style": {
                     "palette": "warm"
-                  }
+                  },
+                  "display_type": "area"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "min": "0"
               }
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 6,
-              "height": 4
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 54,
-        "width": 12,
-        "height": 5
       }
     },
     {
       "id": 902,
       "definition": {
-        "type": "group",
         "title": "\u23f1\ufe0f Queue Latency Estimation",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 166381130918489,
             "definition": {
               "title": "Estimated Wait Time (depth \u00f7 ack rate)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1597,28 +1458,23 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "cool",
                     "line_type": "solid",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
-                "min": "0",
-                "label": "seconds"
+                "label": "seconds",
+                "min": "0"
               }
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 8,
-              "height": 4
             }
           },
           {
+            "id": 361109763499588,
             "definition": {
               "title": "Processing Rate (acked/interval)",
               "type": "toplist",
@@ -1632,46 +1488,43 @@
                       "aggregator": "last"
                     }
                   ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
-                      "formula": "per_minute(acked)",
-                      "limit": {
-                        "count": 15,
-                        "order": "desc"
-                      }
+                      "formula": "per_minute(acked)"
                     }
                   ],
-                  "response_format": "scalar"
+                  "sort": {
+                    "count": 15,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 4
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 59,
-        "width": 12,
-        "height": 5
       }
     },
     {
       "id": 903,
       "definition": {
-        "type": "group",
         "title": "\ud83d\udcc8 Throughput Velocity",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 5009506085801810,
             "definition": {
               "title": "Queue Depth Velocity (rate of change)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1689,11 +1542,11 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "dog_classic",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
@@ -1702,22 +1555,19 @@
               },
               "markers": [
                 {
+                  "label": "Zero line",
                   "value": "y = 0",
-                  "display_type": "error dashed",
-                  "label": "Zero line"
+                  "display_type": "error dashed"
                 }
               ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 6,
-              "height": 4
             }
           },
           {
+            "id": 3879401779469044,
             "definition": {
               "title": "Send vs Receive Rate",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1744,46 +1594,34 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "dog_classic",
                     "line_width": "thick"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ],
               "yaxis": {
                 "include_zero": true,
                 "label": "msgs/min"
               }
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 6,
-              "height": 4
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 64,
-        "width": 12,
-        "height": 5
       }
     },
     {
       "id": 904,
       "definition": {
-        "type": "group",
         "title": "\ud83c\udff7\ufe0f Org & Environment Breakdown",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 183838884691832,
             "definition": {
               "title": "Queues by Environment",
-              "type": "sunburst",
               "requests": [
                 {
                   "queries": [
@@ -1794,26 +1632,21 @@
                       "aggregator": "last"
                     }
                   ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
                       "formula": "q"
                     }
-                  ],
-                  "response_format": "scalar"
+                  ]
                 }
-              ]
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 4,
-              "height": 4
+              ],
+              "type": "sunburst"
             }
           },
           {
+            "id": 985492080836361,
             "definition": {
               "title": "Message Volume by Environment",
-              "type": "sunburst",
               "requests": [
                 {
                   "queries": [
@@ -1824,26 +1657,21 @@
                       "aggregator": "last"
                     }
                   ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
                       "formula": "q"
                     }
-                  ],
-                  "response_format": "scalar"
+                  ]
                 }
-              ]
-            },
-            "layout": {
-              "x": 4,
-              "y": 0,
-              "width": 4,
-              "height": 4
+              ],
+              "type": "sunburst"
             }
           },
           {
+            "id": 5080562274266634,
             "definition": {
               "title": "Queues by Organization",
-              "type": "sunburst",
               "requests": [
                 {
                   "queries": [
@@ -1854,40 +1682,30 @@
                       "aggregator": "last"
                     }
                   ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
                       "formula": "q"
                     }
-                  ],
-                  "response_format": "scalar"
+                  ]
                 }
-              ]
-            },
-            "layout": {
-              "x": 8,
-              "y": 0,
-              "width": 4,
-              "height": 4
+              ],
+              "type": "sunburst"
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 69,
-        "width": 12,
-        "height": 5
       }
     },
     {
       "id": 905,
       "definition": {
-        "type": "group",
         "title": "\ud83d\udc80 Dead Letter Queue Analysis",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 3645987997688160,
             "definition": {
               "title": "DLQ Ratio (% of total)",
               "type": "query_value",
@@ -1939,19 +1757,16 @@
                 }
               ],
               "autoscale": false,
-              "precision": 2,
-              "custom_unit": "%"
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 3,
-              "height": 3
+              "custom_unit": "%",
+              "precision": 2
             }
           },
           {
+            "id": 8325516112739697,
             "definition": {
               "title": "DLQ Messages Over Time",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -1968,10 +1783,10 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "red"
-                  }
+                  },
+                  "display_type": "bars"
                 },
                 {
                   "queries": [
@@ -1987,21 +1802,16 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "orange"
-                  }
+                  },
+                  "display_type": "bars"
                 }
               ]
-            },
-            "layout": {
-              "x": 3,
-              "y": 0,
-              "width": 9,
-              "height": 3
             }
           },
           {
+            "id": 3537897865108803,
             "definition": {
               "title": "DLQ Inventory",
               "type": "query_table",
@@ -2021,6 +1831,7 @@
                       "aggregator": "last"
                     }
                   ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
                       "formula": "depth",
@@ -2037,37 +1848,25 @@
                       "formula": "inflight",
                       "alias": "In Flight"
                     }
-                  ],
-                  "response_format": "scalar"
+                  ]
                 }
               ],
               "has_search_bar": "auto"
-            },
-            "layout": {
-              "x": 0,
-              "y": 3,
-              "width": 12,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 74,
-        "width": 12,
-        "height": 7
       }
     },
     {
       "id": 906,
       "definition": {
-        "type": "group",
         "title": "\ud83d\udd04 FIFO Queues",
         "show_title": true,
+        "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 4175724403134005,
             "definition": {
               "title": "FIFO Queues",
               "type": "query_value",
@@ -2091,15 +1890,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 0,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 8562736618480286,
             "definition": {
               "title": "FIFO Messages Queued",
               "type": "query_value",
@@ -2123,15 +1917,10 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 2,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 6795118105882538,
             "definition": {
               "title": "FIFO In Flight",
               "type": "query_value",
@@ -2155,17 +1944,14 @@
               ],
               "autoscale": true,
               "precision": 0
-            },
-            "layout": {
-              "x": 4,
-              "y": 0,
-              "width": 2,
-              "height": 2
             }
           },
           {
+            "id": 2208363920360796,
             "definition": {
               "title": "FIFO Queue Depth Over Time",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -2182,22 +1968,17 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "cool",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
-            },
-            "layout": {
-              "x": 6,
-              "y": 0,
-              "width": 6,
-              "height": 4
             }
           },
           {
+            "id": 331320439532198,
             "definition": {
               "title": "FIFO Queue Details",
               "type": "query_table",
@@ -2229,6 +2010,7 @@
                       "aggregator": "last"
                     }
                   ],
+                  "response_format": "scalar",
                   "formulas": [
                     {
                       "formula": "depth",
@@ -2250,35 +2032,24 @@
                       "formula": "sent - acked",
                       "alias": "Lag"
                     }
-                  ],
-                  "response_format": "scalar"
+                  ]
                 }
               ],
               "has_search_bar": "auto"
-            },
-            "layout": {
-              "x": 0,
-              "y": 4,
-              "width": 12,
-              "height": 3
             }
           }
         ]
-      },
-      "layout": {
-        "x": 0,
-        "y": 81,
-        "width": 12,
-        "height": 8
       }
     },
     {
+      "id": 7279169903684473,
       "definition": {
         "title": "\ud83d\udcca MQ API Usage (30-Day)",
         "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 1650537492815803,
             "definition": {
               "title": "Messages Sent (30d)",
               "type": "query_value",
@@ -2304,6 +2075,7 @@
             }
           },
           {
+            "id": 1629814561046956,
             "definition": {
               "title": "Messages Received (30d)",
               "type": "query_value",
@@ -2329,6 +2101,7 @@
             }
           },
           {
+            "id": 3147383428341023,
             "definition": {
               "title": "Messages Acked (30d)",
               "type": "query_value",
@@ -2354,20 +2127,12 @@
             }
           },
           {
+            "id": 3709877052193049,
             "definition": {
               "title": "Usage by Environment",
               "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "query1",
-                      "limit": {
-                        "count": 10,
-                        "order": "desc"
-                      }
-                    }
-                  ],
                   "queries": [
                     {
                       "name": "query1",
@@ -2376,14 +2141,32 @@
                       "aggregator": "last"
                     }
                   ],
-                  "response_format": "scalar"
+                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 10,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
             }
           },
           {
+            "id": 3066984326114839,
             "definition": {
               "title": "Usage Trend (Sent / Received / Acked)",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -2400,12 +2183,12 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "dog_classic",
                     "line_type": "solid",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 },
                 {
                   "formulas": [
@@ -2421,12 +2204,12 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "cool",
                     "line_type": "solid",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 },
                 {
                   "formulas": [
@@ -2442,12 +2225,12 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "line",
                   "style": {
                     "palette": "warm",
                     "line_type": "solid",
                     "line_width": "normal"
-                  }
+                  },
+                  "display_type": "line"
                 }
               ]
             }
@@ -2456,12 +2239,14 @@
       }
     },
     {
+      "id": 8154146207244599,
       "definition": {
         "title": "\ud83d\udcb0 Billing & API Requests",
         "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 1112661510800438,
             "definition": {
               "title": "Billable Units by Env (30d)",
               "type": "query_value",
@@ -2487,6 +2272,7 @@
             }
           },
           {
+            "id": 7855501391124929,
             "definition": {
               "title": "API Requests by Env (30d)",
               "type": "query_value",
@@ -2512,6 +2298,7 @@
             }
           },
           {
+            "id": 8707508516383645,
             "definition": {
               "title": "Org-Level Billable Units (30d)",
               "type": "query_value",
@@ -2537,6 +2324,7 @@
             }
           },
           {
+            "id": 1261945346440934,
             "definition": {
               "title": "Org-Level API Requests (30d)",
               "type": "query_value",
@@ -2565,26 +2353,19 @@
       }
     },
     {
+      "id": 1968325459273966,
       "definition": {
         "title": "\ud83d\udd04 Queue Health & QoS",
         "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 4166661065703113,
             "definition": {
               "title": "Dequeue Rate by Queue (%)",
               "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "query1",
-                      "limit": {
-                        "count": 20,
-                        "order": "asc"
-                      }
-                    }
-                  ],
                   "queries": [
                     {
                       "name": "query1",
@@ -2593,26 +2374,33 @@
                       "aggregator": "last"
                     }
                   ],
-                  "response_format": "scalar"
+                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "asc"
+                      }
+                    ]
+                  }
                 }
               ]
             }
           },
           {
+            "id": 6442321323622449,
             "definition": {
               "title": "Stale Messages Detected",
               "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "query1",
-                      "limit": {
-                        "count": 20,
-                        "order": "desc"
-                      }
-                    }
-                  ],
                   "queries": [
                     {
                       "name": "query1",
@@ -2621,7 +2409,22 @@
                       "aggregator": "last"
                     }
                   ],
-                  "response_format": "scalar"
+                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  }
                 }
               ]
             }
@@ -2630,12 +2433,14 @@
       }
     },
     {
+      "id": 5330421567617788,
       "definition": {
         "title": "\ud83d\udccb Audit Log (Config Changes)",
         "type": "group",
         "layout_type": "ordered",
         "widgets": [
           {
+            "id": 2179948681016112,
             "definition": {
               "title": "MQ Config Changes",
               "type": "query_value",
@@ -2661,8 +2466,11 @@
             }
           },
           {
+            "id": 3789628913092267,
             "definition": {
               "title": "Changes Over Time",
+              "show_legend": true,
+              "legend_layout": "auto",
               "type": "timeseries",
               "requests": [
                 {
@@ -2679,10 +2487,10 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "dog_classic"
-                  }
+                  },
+                  "display_type": "bars"
                 },
                 {
                   "formulas": [
@@ -2698,10 +2506,10 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "warm"
-                  }
+                  },
+                  "display_type": "bars"
                 },
                 {
                   "formulas": [
@@ -2717,10 +2525,10 @@
                     }
                   ],
                   "response_format": "timeseries",
-                  "display_type": "bars",
                   "style": {
                     "palette": "cool"
-                  }
+                  },
+                  "display_type": "bars"
                 }
               ]
             }
@@ -2729,33 +2537,7 @@
       }
     }
   ],
-  "template_variables": [
-    {
-      "name": "org",
-      "prefix": "org",
-      "available_values": [],
-      "default": "*"
-    },
-    {
-      "name": "environment",
-      "prefix": "environment",
-      "available_values": [],
-      "default": "*"
-    },
-    {
-      "name": "region",
-      "prefix": "region",
-      "available_values": [],
-      "default": "*"
-    },
-    {
-      "name": "queue",
-      "prefix": "queue_name",
-      "available_values": [],
-      "default": "*"
-    }
-  ],
-  "layout_type": "ordered",
   "notify_list": [],
-  "reflow_type": "fixed"
+  "reflow_type": "auto",
+  "restricted_roles": []
 }
