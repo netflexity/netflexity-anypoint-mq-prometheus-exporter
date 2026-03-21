@@ -558,9 +558,23 @@ Import `datadog/dashboard.json` into Datadog: Dashboards > New Dashboard > Impor
 | MQ Config Change | Any change | Info |
 | Billable Unit Threshold | Units > 500K | Warning |
 
-Import with: `./datadog/monitors/import-monitors.sh`
+**Option 1: Manual import**
 
-See [`datadog/README.md`](datadog/README.md) for details.
+```bash
+DD_API_KEY=xxx DD_APP_KEY=yyy ./datadog/monitors/import-monitors.sh
+```
+
+**Option 2: Auto-provision on startup**
+
+Set these environment variables and monitors are created automatically when the exporter starts:
+
+```bash
+DATADOG_API_KEY=xxx
+DATADOG_APP_KEY=yyy
+DATADOG_MONITORS_AUTO_PROVISION=true
+```
+
+The provisioner checks Datadog for existing monitors (by name + `source:anypoint-mq-exporter` tag) and only creates missing ones. Existing monitors are never overwritten unless you also set `DATADOG_MONITORS_AUTO_UPDATE=true`.
 
 ### New Relic & Dynatrace
 
@@ -571,36 +585,32 @@ Both support Prometheus remote write or OpenMetrics scraping:
 
 No changes to the exporter needed — standard Prometheus metrics.
 
-## Free vs Pro
+## Features
 
-| Feature | Free | Pro |
-|---------|:----:|:---:|
-| Queue & exchange metrics | &#x2714; | &#x2714; |
-| Real-time queue depth | &#x2714; | &#x2714; |
-| Auto-discovery (multi-org) | &#x2714; | &#x2714; |
-| Prometheus endpoint | &#x2714; | &#x2714; |
-| Dequeue rate (QoS) | &#x2714; | &#x2714; |
-| Usage & billing metrics | &#x2714; | &#x2714; |
-| Demo data loader | &#x2714; | &#x2714; |
-| Grafana dashboards + alerts | &#x2714; | &#x2714; |
-| Datadog/New Relic/Dynatrace | &#x2714; | &#x2714; |
-| Audit log monitoring | — | &#x2714; |
-| Stale message detection | — | &#x2714; |
-| Health scores (0-100) | — | &#x2714; |
-| Queue depth monitors | — | &#x2714; |
-| DLQ alerting | — | &#x2714; |
-| Throughput anomaly detection | — | &#x2714; |
-| Multi-channel notifications | — | &#x2714; |
+| Feature | Included |
+|---------|:--------:|
+| Queue & exchange metrics | &#x2714; |
+| Real-time queue depth | &#x2714; |
+| Auto-discovery (multi-org) | &#x2714; |
+| Prometheus endpoint | &#x2714; |
+| Dequeue rate (QoS) | &#x2714; |
+| Usage & billing metrics | &#x2714; |
+| Stale message detection | &#x2714; |
+| Audit log monitoring | &#x2714; |
+| Demo data loader | &#x2714; |
+| Grafana dashboards + alerts | &#x2714; |
+| Datadog dashboard + 10 monitors | &#x2714; |
+| Datadog monitor auto-provisioning | &#x2714; |
+| New Relic / Dynatrace compatible | &#x2714; |
+
+**100% free and open source.** No Pro tier, no license keys, no feature gating.
 
 ## Shared Library
 
-This exporter shares core infrastructure with the [Anypoint Metrics Prometheus Exporter](https://bitbucket.org/netflexity/anypoint-metrics-prometheus-exporter) via the [`anypoint-common`](https://bitbucket.org/netflexity/netflexity-anypoint-common) library:
+This exporter shares core infrastructure with the [Anypoint Metrics Prometheus Exporter](https://bitbucket.org/netflexity/anypoint-metrics-prometheus-exporter) via the [`anypoint-common`](https://github.com/netflexity/netflexity-anypoint-common) library:
 
 - OAuth2 authentication with token caching
 - Environment auto-discovery
-- Monitor evaluation engine
-- 5 notification channels (Slack, PagerDuty, Email, Teams, Webhook)
-- REST API controllers, health indicators, license gating
 
 ## Contributing
 

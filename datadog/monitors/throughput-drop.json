@@ -1,0 +1,24 @@
+{
+  "name": "[Anypoint MQ] Throughput Drop Detected",
+  "type": "metric alert",
+  "query": "pct_change(avg(last_1h),last_1d):avg:anypoint_mq.anypoint_mq_queue_messages_sent{*} by {queue_name,environment} < -80",
+  "message": "{{#is_alert}}\nMessage throughput dropped over 80% compared to yesterday\n\nQueue: {{queue_name.name}}\nEnvironment: {{environment.name}}\nDrop: {{value}}%\n\nThis queue is receiving significantly fewer messages than the same time yesterday. This could indicate:\n- Upstream producer failure or deployment issue\n- Scheduled maintenance (expected)\n- Integration flow stopped or erroring before publish\n\nActions:\n1. Verify upstream producer applications are healthy\n2. Check integration flow logs for errors\n3. Confirm this isn't expected (maintenance window, batch schedule)\n\n@slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\nThroughput for {{queue_name.name}} has recovered.\n{{/is_recovery}}",
+  "tags": [
+    "service:anypoint-mq",
+    "severity:warning",
+    "team:integration",
+    "source:anypoint-mq-exporter"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": -80,
+      "warning": -50
+    },
+    "notify_no_data": false,
+    "renotify_interval": 120,
+    "evaluation_delay": 300,
+    "include_tags": true,
+    "new_group_delay": 300
+  },
+  "priority": 3
+}

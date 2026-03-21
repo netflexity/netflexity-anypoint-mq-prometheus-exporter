@@ -54,6 +54,16 @@ anypoint:
     readTimeoutSeconds: 60
     maxRetries: 3
 
+# Datadog monitor auto-provisioning (optional)
+datadog:
+  api-key: ${DATADOG_API_KEY:}
+  app-key: ${DATADOG_APP_KEY:}
+  site: ${DATADOG_SITE:datadoghq.com}
+  monitors:
+    auto-provision: ${DATADOG_MONITORS_AUTO_PROVISION:false}
+    auto-update: ${DATADOG_MONITORS_AUTO_UPDATE:false}
+    tag-prefix: ${DATADOG_TAG_PREFIX:source:anypoint-mq-exporter}
+
 logging:
   level:
     com.netflexity.amq.exporter: DEBUG

@@ -1,0 +1,31 @@
+{
+  "id": 267847867,
+  "type": "metric alert",
+  "name": "[Anypoint MQ] Configuration Change Detected",
+  "message": "MQ configuration change detected in audit log: {{value}} changes.\n\nCheck the Anypoint Platform audit log for details on what was created, deleted, or modified.\n\n@slack-alerts",
+  "tags": [
+    "service:anypoint-mq",
+    "monitor:audit-change"
+  ],
+  "query": "avg(last_5m):avg:anypoint_mq.anypoint_mq_audit_changes_total{*} > 0",
+  "options": {
+    "thresholds": {
+      "critical": 0.0
+    },
+    "notify_no_data": false,
+    "renotify_interval": 0,
+    "evaluation_delay": 60,
+    "notify_audit": false,
+    "new_host_delay": 300,
+    "include_tags": true,
+    "silenced": {}
+  },
+  "multi": false,
+  "created_at": 1774038834000,
+  "created": "2026-03-20T20:33:54.436164+00:00",
+  "modified": "2026-03-20T20:33:54.436164+00:00",
+  "deleted": null,
+  "priority": null,
+  "restricted_roles": null,
+  "draft_status": "published"
+}

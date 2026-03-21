@@ -1,0 +1,34 @@
+{
+  "id": 267517761,
+  "type": "metric alert",
+  "name": "[Anypoint MQ] Exporter Scrape Errors",
+  "message": "{{#is_alert}}\n\u2757 **Anypoint MQ Exporter is experiencing repeated scrape failures**\n\n{{value}} scrape errors in the last 15 minutes.\n\n**Possible causes:**\n- Anypoint Platform API outage or rate limiting\n- Connected App credentials expired or revoked\n- Network connectivity issues to anypoint.mulesoft.com\n- Exporter application resource issues (OOM, thread exhaustion)\n\n**Actions:**\n1. Check exporter logs: `kubectl logs -l app=anypoint-mq-exporter`\n2. Verify Anypoint Platform status: https://status.mulesoft.com\n3. Test API credentials manually\n4. Check exporter health endpoint: `/actuator/health`\n\n@slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\n\u2705 Exporter scrape errors resolved \u2014 metrics collection is healthy.\n{{/is_recovery}}",
+  "tags": [
+    "service:anypoint-mq",
+    "severity:warning",
+    "team:integration",
+    "source:anypoint-mq-exporter"
+  ],
+  "query": "avg(last_15m):sum:anypoint_mq.anypoint_mq_scrape_errors_total{*} > 3",
+  "options": {
+    "thresholds": {
+      "critical": 3.0,
+      "warning": 1.0
+    },
+    "notify_no_data": false,
+    "renotify_interval": 120,
+    "evaluation_delay": 60,
+    "include_tags": true,
+    "notify_audit": false,
+    "new_host_delay": 300,
+    "silenced": {}
+  },
+  "multi": false,
+  "created_at": 1773937707000,
+  "created": "2026-03-19T16:28:27.232640+00:00",
+  "modified": "2026-03-20T20:33:55.582145+00:00",
+  "deleted": null,
+  "priority": 4,
+  "restricted_roles": null,
+  "draft_status": "published"
+}

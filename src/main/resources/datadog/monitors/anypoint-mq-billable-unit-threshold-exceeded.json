@@ -1,0 +1,32 @@
+{
+  "id": 267847870,
+  "type": "metric alert",
+  "name": "[Anypoint MQ] Billable Unit Threshold Exceeded",
+  "message": "MQ billable units ({{value}}) have exceeded the 500,000 threshold.\n\nReview MQ usage to avoid unexpected billing. Check which environments and queues are consuming the most API calls.\n\n@slack-alerts",
+  "tags": [
+    "service:anypoint-mq",
+    "monitor:billing"
+  ],
+  "query": "avg(last_5m):avg:anypoint_mq.anypoint_mq_org_usage_billable_units_total{*} > 500000",
+  "options": {
+    "thresholds": {
+      "critical": 500000.0,
+      "warning": 250000.0
+    },
+    "notify_no_data": false,
+    "renotify_interval": 1440,
+    "evaluation_delay": 60,
+    "notify_audit": false,
+    "new_host_delay": 300,
+    "include_tags": true,
+    "silenced": {}
+  },
+  "multi": false,
+  "created_at": 1774038834000,
+  "created": "2026-03-20T20:33:54.663745+00:00",
+  "modified": "2026-03-20T20:33:54.663745+00:00",
+  "deleted": null,
+  "priority": null,
+  "restricted_roles": null,
+  "draft_status": "published"
+}

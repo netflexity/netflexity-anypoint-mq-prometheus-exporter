@@ -1,0 +1,23 @@
+{
+  "name": "[Anypoint MQ] Stale Queue - No Consumer Activity",
+  "type": "metric alert",
+  "query": "sum(last_30m):avg:anypoint_mq.anypoint_mq_queue_messages_acked{*} by {queue_name,environment}.as_count() < 1",
+  "message": "{{#is_alert}}\nNo consumer activity for 30 minutes\n\nQueue: {{queue_name.name}}\nEnvironment: {{environment.name}}\nAcked (30m): {{value}}\n\nThis queue has had zero message acknowledgments for the last 30 minutes. If the queue has pending messages, consumers may be down.\n\nActions:\n1. Check if consumer applications are running\n2. Verify network connectivity to Anypoint MQ\n3. Check consumer deployment status in Runtime Manager\n4. Review if the queue is intentionally idle (batch processing schedule)\n\n@slack-mulesoft-alerts\n{{/is_alert}}\n\n{{#is_recovery}}\nConsumer activity resumed on {{queue_name.name}} in {{environment.name}}.\n{{/is_recovery}}",
+  "tags": [
+    "service:anypoint-mq",
+    "severity:warning",
+    "team:integration",
+    "source:anypoint-mq-exporter"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 1
+    },
+    "notify_no_data": false,
+    "renotify_interval": 60,
+    "evaluation_delay": 60,
+    "include_tags": true,
+    "new_group_delay": 300
+  },
+  "priority": 3
+}
