@@ -50,7 +50,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "avg:anypoint_mq.anypoint_mq_queue{$org,$environment,$region} by {queue_name}",
+                      "query": "avg:anypoint_mq.anypoint_mq_queue{*} by {queue_name}",
                       "aggregator": "last"
                     }
                   ],
