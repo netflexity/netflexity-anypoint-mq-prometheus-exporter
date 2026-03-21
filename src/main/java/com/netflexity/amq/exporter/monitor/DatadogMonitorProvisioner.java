@@ -17,12 +17,11 @@ import java.io.InputStream;
 import java.util.*;
 
 /**
- * Auto-provisions Datadog monitors on application startup.
+ * Auto-provisions Datadog dashboard and monitors on application startup.
  * 
- * Reads monitor definitions from datadog/monitors/*.json (bundled in JAR),
- * checks if each monitor already exists (by name), and creates missing ones.
- * Existing monitors are left untouched (no auto-update to avoid overwriting
- * user customizations).
+ * Reads monitor definitions from datadog/monitors/*.json and dashboard from
+ * datadog/dashboard.json (bundled in JAR). Checks Datadog for existing
+ * resources and creates any that are missing.
  * 
  * Activate with:
  *   datadog.api-key=xxx
@@ -56,29 +55,129 @@ public class DatadogMonitorProvisioner {
     @Value("${datadog.monitors.tag-prefix:source:anypoint-mq-exporter}")
     private String tagPrefix;
 
+    @Value("${datadog.dashboard.title:Anypoint MQ — Queue & Exchange Monitoring}")
+    private String dashboardTitle;
+
     public DatadogMonitorProvisioner(ObjectMapper objectMapper) {
         this.restTemplate = new RestTemplate();
         this.objectMapper = objectMapper;
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    public void provisionMonitors() {
+    public void provision() {
         if (apiKey.isBlank() || appKey.isBlank()) {
-            log.warn("Datadog monitor auto-provisioning enabled but DD API/APP keys not configured. Skipping.");
+            log.warn("Datadog auto-provisioning enabled but API/APP keys not configured. Skipping.");
             return;
         }
 
-        log.info("Datadog monitor auto-provisioning started (site: {}, auto-update: {})", site, autoUpdate);
+        log.info("Datadog auto-provisioning started (site: {}, auto-update: {})", site, autoUpdate);
 
+        provisionDashboard();
+        provisionMonitors();
+    }
+
+    // --- Dashboard Provisioning ---
+
+    private void provisionDashboard() {
         try {
-            // Load monitor definitions from classpath
+            // Check if dashboard already exists by title
+            String existingId = findDashboardByTitle(dashboardTitle);
+            if (existingId != null) {
+                log.info("Datadog dashboard already exists: '{}' (id: {})", dashboardTitle, existingId);
+                return;
+            }
+
+            // Load dashboard from classpath
+            Map<String, Object> dashboard = loadDashboardDefinition();
+            if (dashboard == null) {
+                log.warn("No dashboard definition found at datadog/dashboard.json");
+                return;
+            }
+
+            // Create dashboard
+            String id = createDashboard(dashboard);
+            if (id != null) {
+                log.info("Created Datadog dashboard: '{}' (id: {})", dashboardTitle, id);
+            }
+        } catch (Exception e) {
+            log.error("Failed to provision Datadog dashboard: {}", e.getMessage(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String findDashboardByTitle(String title) {
+        try {
+            String url = String.format("https://api.%s/api/v1/dashboard", site);
+            HttpEntity<Void> entity = new HttpEntity<>(buildHeaders());
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+            if (response.getBody() != null) {
+                List<Map<String, Object>> dashboards = (List<Map<String, Object>>) response.getBody().get("dashboards");
+                if (dashboards != null) {
+                    for (Map<String, Object> db : dashboards) {
+                        if (title.equals(db.get("title"))) {
+                            return (String) db.get("id");
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to query existing dashboards: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private Map<String, Object> loadDashboardDefinition() {
+        try {
+            PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+            Resource resource = resolver.getResource("classpath:datadog/dashboard.json");
+            if (resource.exists()) {
+                try (InputStream is = resource.getInputStream()) {
+                    Map<String, Object> dashboard = objectMapper.readValue(is, new TypeReference<>() {});
+                    // Strip read-only fields
+                    dashboard.remove("id");
+                    dashboard.remove("author_handle");
+                    dashboard.remove("author_name");
+                    dashboard.remove("created_at");
+                    dashboard.remove("modified_at");
+                    dashboard.remove("url");
+                    return dashboard;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to load dashboard definition: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String createDashboard(Map<String, Object> dashboard) {
+        try {
+            String url = String.format("https://api.%s/api/v1/dashboard", site);
+            String body = objectMapper.writeValueAsString(dashboard);
+
+            HttpEntity<String> entity = new HttpEntity<>(body, buildHeaders());
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, entity, Map.class);
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return (String) response.getBody().get("id");
+            }
+        } catch (Exception e) {
+            log.error("Failed to create dashboard: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    // --- Monitor Provisioning ---
+
+    private void provisionMonitors() {
+        try {
             List<Map<String, Object>> definitions = loadMonitorDefinitions();
             if (definitions.isEmpty()) {
                 log.warn("No monitor definitions found in datadog/monitors/");
                 return;
             }
 
-            // Get existing monitors by our tag
             Map<String, Long> existingMonitors = getExistingMonitors();
 
             int created = 0, updated = 0, skipped = 0;
@@ -90,13 +189,11 @@ public class DatadogMonitorProvisioner {
                 Long existingId = existingMonitors.get(name);
 
                 if (existingId == null) {
-                    // Create new monitor
                     if (createMonitor(definition)) {
                         created++;
                         log.info("Created Datadog monitor: {}", name);
                     }
                 } else if (autoUpdate) {
-                    // Update existing monitor
                     if (updateMonitor(existingId, definition)) {
                         updated++;
                         log.info("Updated Datadog monitor: {} (id: {})", name, existingId);
