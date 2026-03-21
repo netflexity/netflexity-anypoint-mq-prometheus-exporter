@@ -13,6 +13,6 @@ RUN mvn clean package -DskipTests
 
 # Stage 3: Runtime
 FROM eclipse-temurin:17-jre
-COPY --from=build /app/target/*.jar /app/app.jar
+COPY --from=build /app/target/*-exec.jar /app/app.jar
 EXPOSE 9101
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
