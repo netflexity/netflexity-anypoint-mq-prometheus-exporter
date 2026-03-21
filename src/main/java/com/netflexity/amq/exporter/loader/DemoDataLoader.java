@@ -353,9 +353,11 @@ public class DemoDataLoader {
     /**
      * Purge a queue by consuming all messages, then acknowledging (deleting) them.
      * GET messages -> DELETE each message by lockId.
+     * Drains until empty (no fixed round limit). Safety cap at 10,000 messages.
      */
     private Mono<Integer> purgeQueue(String environmentId, String region, String queueId, boolean isFifo) {
         AtomicInteger consumed = new AtomicInteger(0);
+        int maxMessages = 10_000; // safety cap to prevent infinite loops
 
         return authClient.getAccessToken()
                 .flatMap(token -> {
@@ -366,9 +368,8 @@ public class DemoDataLoader {
                             environmentId,
                             queueId);
 
-                    // Poll up to 20 rounds (200 messages max) to drain the queue
-                    return Flux.range(1, 20)
-                            .concatMap(attempt -> webClient.get()
+                    // Drain until empty or safety cap reached
+                    return Mono.defer(() -> webClient.get()
                                     .uri(getUrl)
                                     .header("Authorization", token.getAuthorizationHeader())
                                     .header("X-ANYPNT-ORG-ID", anypointConfig.getOrganizationId())
@@ -376,19 +377,24 @@ public class DemoDataLoader {
                                     .retrieve()
                                     .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
                                     .defaultIfEmpty(Collections.emptyList())
-                                    .flatMapMany(messages -> {
+                                    .flatMap(messages -> {
                                         if (messages.isEmpty()) {
-                                            return Flux.empty();
+                                            return Mono.just(0); // signal done
                                         }
-                                        // Delete each message (acknowledge)
                                         return Flux.fromIterable(messages)
                                                 .flatMap(msg -> deleteMessage(token.getAuthorizationHeader(),
                                                         environmentId, region, queueId, msg), isFifo ? 1 : 5)
-                                                .doOnNext(v -> consumed.incrementAndGet());
-                                    })
-                                    .collectList()
-                                    .filter(list -> !list.isEmpty()))  // stop if empty batch
-                            .then(Mono.fromCallable(consumed::get));
+                                                .doOnNext(v -> consumed.incrementAndGet())
+                                                .then(Mono.just(messages.size()));
+                                    }))
+                            .repeat()
+                            .takeWhile(count -> count > 0 && consumed.get() < maxMessages)
+                            .then(Mono.fromCallable(() -> {
+                                if (consumed.get() >= maxMessages) {
+                                    log.warn("Safety cap reached for queue {} — consumed {} messages", queueId, consumed.get());
+                                }
+                                return consumed.get();
+                            }));
                 })
                 .onErrorResume(e -> {
                     log.warn("Error purging queue {}: {}", queueId, e.getMessage());
