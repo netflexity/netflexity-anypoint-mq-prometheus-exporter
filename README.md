@@ -630,7 +630,7 @@ No changes to the exporter needed — standard Prometheus metrics.
 
 ## Shared Library
 
-This exporter shares core infrastructure with the [Anypoint Metrics Prometheus Exporter](https://bitbucket.org/netflexity/anypoint-metrics-prometheus-exporter) via the [`anypoint-common`](https://github.com/netflexity/netflexity-anypoint-common) library:
+This exporter shares core infrastructure with the [Anypoint Metrics Prometheus Exporter](https://github.com/netflexity/netflexity-anypoint-metrics-prometheus-exporter) via the [`anypoint-common`](https://github.com/netflexity/netflexity-anypoint-common) library:
 
 - OAuth2 authentication with token caching
 - Environment auto-discovery
