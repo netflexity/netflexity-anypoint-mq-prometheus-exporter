@@ -85,7 +85,7 @@ No manual configuration of queue names. No YAML lists to maintain. It just works
 - **Stale Message Detection** — Browses queue messages across scrape cycles, compares IDs — same message in consecutive scrapes = stale (stuck).
 - **Demo Data Loader** — Built-in REST API to publish/consume messages for dashboard demos. One-shot or continuous mode.
 - **Prometheus-Native** — Standard `/actuator/prometheus` endpoint via Micrometer. Drop-in compatible with any Prometheus scraper.
-- **Pre-Built Grafana Dashboards** — 70 panels across 8 sections with 8 alert rules. Includes Organization, Environment, and Queue dropdown selectors.
+- **Pre-Built Grafana Dashboards** — 70 panels across 8 sections with 10 alert rules. Includes Organization, Environment, and Queue dropdown selectors.
 - **Pre-Built Datadog Dashboards** — 19 widget groups with 11 production monitors.
 - **Advanced Monitors (Pro)** — Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
 - **Multi-Channel Alerting (Pro)** — Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
@@ -459,11 +459,34 @@ curl -X POST http://admin:password@localhost:3000/api/dashboards/db \
 
 ### Alert Rules
 
-8 pre-configured Grafana alert rules. Import with one command:
+10 pre-configured Grafana alert rules matching the Datadog monitors:
 
+| Alert | Severity |
+|-------|----------|
+| Dead Letter Queue Growth | Critical |
+| Queue Depth Spike | Warning |
+| High In-Flight Messages | Warning |
+| Stale Queue - No Consumer Activity | Warning |
+| Stale Messages Detected | Critical |
+| Throughput Drop Detected | Warning |
+| Low Dequeue Rate | Warning |
+| Billable Unit Threshold | Warning |
+| Configuration Change Detected | Info |
+| Scrape Errors | Info |
+
+**Option 1: Import via script**
 ```bash
 ./grafana/alerts/import-alerts.sh <GRAFANA_URL> <PROMETHEUS_DATASOURCE_UID> [admin] [password]
 ```
+
+**Option 2: File-based provisioning (auto-import on Grafana startup)**
+
+Copy the alert rules to Grafana's provisioning directory:
+```bash
+cp grafana/alerts/alert-rules.json /etc/grafana/provisioning/alerting/
+```
+
+Grafana will auto-import them on next restart. No manual steps.
 
 Configure notifications under **Alerting > Contact points** in Grafana (Slack, email, PagerDuty, etc.).
 
@@ -482,8 +505,8 @@ Configure notifications under **Alerting > Contact points** in Grafana (Slack, e
 | `/api/loader/stop` | POST | Stop continuous loader |
 | `/api/loader/status` | GET | Check if continuous loader is running |
 | `/api/loader/test` | POST | Debug: test single publish with full error output |
-| `/api/health-scores` | GET | Queue health scores (Pro) |
-| `/api/monitors` | GET | Monitor definitions (Pro) |
+| `/api/health-scores` | GET | Queue health scores |
+| `/api/monitors` | GET | Monitor definitions |
 
 ## Deployment
 
