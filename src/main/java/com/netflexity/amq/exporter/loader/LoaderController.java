@@ -37,13 +37,13 @@ public class LoaderController {
      * 
      * @param queuePrefix Only target queues with this prefix (null = all)
      * @param minMessages Min messages per queue (default 1)
-     * @param maxMessages Max messages per queue (default 5)
+     * @param maxMessages Max messages per queue (default 2)
      */
     @PostMapping("/load")
     public Mono<ResponseEntity<DemoDataLoader.LoadResult>> load(
             @RequestParam(required = false) String queuePrefix,
             @RequestParam(defaultValue = "1") int minMessages,
-            @RequestParam(defaultValue = "5") int maxMessages) {
+            @RequestParam(defaultValue = "2") int maxMessages) {
         
         log.info("Load requested: prefix={}, range={}-{}", queuePrefix, minMessages, maxMessages);
         return loader.load(queuePrefix, minMessages, maxMessages)
@@ -69,16 +69,16 @@ public class LoaderController {
      * Creates a visible traffic spike on dashboards.
      *
      * @param queuePrefix Only target queues with this prefix (null = all)
-     * @param minMessages Min messages per queue (default 2)
-     * @param maxMessages Max messages per queue (default 10)
-     * @param delaySeconds Seconds between load and consume (default 60)
+     * @param minMessages Min messages per queue (default 1)
+     * @param maxMessages Max messages per queue (default 2)
+     * @param delaySeconds Seconds between load and consume (default 30)
      */
     @PostMapping("/cycle")
     public Mono<ResponseEntity<DemoDataLoader.LoadResult>> cycle(
             @RequestParam(required = false) String queuePrefix,
             @RequestParam(defaultValue = "1") int minMessages,
-            @RequestParam(defaultValue = "5") int maxMessages,
-            @RequestParam(defaultValue = "60") int delaySeconds) {
+            @RequestParam(defaultValue = "2") int maxMessages,
+            @RequestParam(defaultValue = "30") int delaySeconds) {
         
         log.info("Cycle requested: prefix={}, range={}-{}, delay={}s", queuePrefix, minMessages, maxMessages, delaySeconds);
         return loader.cycle(queuePrefix, minMessages, maxMessages, delaySeconds)
@@ -90,17 +90,17 @@ public class LoaderController {
      *
      * @param queuePrefix Only target queues with this prefix (null = all)
      * @param minMessages Min messages per queue per cycle (default 1)
-     * @param maxMessages Max messages per queue per cycle (default 5)
-     * @param delaySeconds Delay between load and consume within each cycle (default 60)
-     * @param intervalSeconds Interval between cycles (default 300 = 5 minutes)
+     * @param maxMessages Max messages per queue per cycle (default 2)
+     * @param delaySeconds Delay between load and consume within each cycle (default 30)
+     * @param intervalSeconds Interval between cycles (default 600 = 10 minutes)
      */
     @PostMapping("/start")
     public ResponseEntity<Map<String, Object>> start(
             @RequestParam(required = false) String queuePrefix,
             @RequestParam(defaultValue = "1") int minMessages,
-            @RequestParam(defaultValue = "5") int maxMessages,
-            @RequestParam(defaultValue = "60") int delaySeconds,
-            @RequestParam(defaultValue = "300") int intervalSeconds) {
+            @RequestParam(defaultValue = "2") int maxMessages,
+            @RequestParam(defaultValue = "30") int delaySeconds,
+            @RequestParam(defaultValue = "600") int intervalSeconds) {
         
         boolean started = loader.startContinuous(queuePrefix, minMessages, maxMessages, delaySeconds, intervalSeconds);
         
