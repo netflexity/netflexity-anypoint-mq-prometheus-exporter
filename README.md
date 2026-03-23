@@ -41,11 +41,11 @@ No manual configuration of queue names. No YAML lists to maintain. It just works
 |  /actuator/prometheus   Prometheus metrics endpoint     |
 |  /api/status            Discovered orgs & envs          |
 |  /api/loader/*          Demo data loader                |
-|  /api/health-scores     Queue health scores (Pro)       |
-|  /api/monitors          Monitor definitions (Pro)       |
+|  /api/health-scores     Queue health scores              |
+|  /api/monitors          Monitor definitions              |
 |                                                         |
 |  +------------------+  +-----------------------------+  |
-|  |  Auto-Discovery  |  |  Monitors Module (Pro)      |  |
+|  |  Auto-Discovery  |  |  Monitors Module            |  |
 |  |  - Orgs          |  |  - Queue depth alerts       |  |
 |  |  - Environments  |  |  - DLQ detection            |  |
 |  |  - Queues        |  |  - Throughput anomalies     |  |
@@ -93,8 +93,8 @@ No manual configuration of queue names. No YAML lists to maintain. It just works
 - **Prometheus-Native** — Standard `/actuator/prometheus` endpoint via Micrometer. Drop-in compatible with any Prometheus scraper.
 - **Pre-Built Grafana Dashboards** — 70 panels across 8 sections with 10 alert rules. Includes Organization, Environment, and Queue dropdown selectors.
 - **Pre-Built Datadog Dashboards** — 19 widget groups with 11 production monitors.
-- **Advanced Monitors (Pro)** — Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
-- **Multi-Channel Alerting (Pro)** — Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
+- **Advanced Monitors** — Health scores, queue depth alerts, DLQ detection, throughput anomaly detection.
+- **Multi-Channel Alerting** — Slack, PagerDuty, Email, Microsoft Teams, and generic Webhooks.
 - **Works Everywhere** — Grafana, Datadog, New Relic, Dynatrace — anything that scrapes Prometheus metrics.
 - **Docker Compose Included** — Full stack (Exporter + Prometheus + Grafana) in one command.
 - **Railway-Ready** — Deploys as 3 Railway services for ~$15/month. [Setup guide](RAILWAY-SETUP.md)
@@ -433,12 +433,11 @@ All settings can be overridden via environment variables or `application.yml`.
 | `anypoint.http.readTimeoutSeconds` | `60` | HTTP read timeout |
 | `anypoint.http.maxRetries` | `3` | Max retry attempts for failed API calls |
 
-### Monitors (Pro)
+### Monitors
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ANYPOINT_MONITORS_ENABLED` | `true` | Enable health scores and alerting |
-| `ANYPOINT_LICENSE_KEY` | — | Pro license key for monitors module |
 | `anypoint.monitors.evaluationIntervalSeconds` | `60` | Monitor evaluation frequency |
 | `anypoint.monitors.defaults.cooldownMinutes` | `15` | Alert cooldown to prevent notification storms |
 
