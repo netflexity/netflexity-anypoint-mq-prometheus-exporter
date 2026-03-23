@@ -134,12 +134,32 @@ public class LoaderController {
     }
 
     /**
+     * Start async background purge — returns immediately, drains in background.
+     * Use GET /api/loader/status to monitor progress.
+     */
+    @PostMapping("/purge-async")
+    public ResponseEntity<Map<String, Object>> purgeAsync(
+            @RequestParam(required = false) String queuePrefix) {
+        boolean started = loader.startAsyncPurge(queuePrefix);
+        if (started) {
+            log.warn("Async purge started");
+            return ResponseEntity.ok(Map.of("status", "purge_started"));
+        } else {
+            return ResponseEntity.ok(Map.of("status", "already_purging", 
+                    "progress", loader.getPurgeProgress()));
+        }
+    }
+
+    /**
      * Check if the continuous loader is running.
      */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> status() {
-        return ResponseEntity.ok(Map.of(
-                "running", loader.isRunning()));
+        Map<String, Object> status = new java.util.LinkedHashMap<>();
+        status.put("running", loader.isRunning());
+        status.put("purging", loader.isPurging());
+        status.put("purgeProgress", loader.getPurgeProgress());
+        return ResponseEntity.ok(status);
     }
 
     /**

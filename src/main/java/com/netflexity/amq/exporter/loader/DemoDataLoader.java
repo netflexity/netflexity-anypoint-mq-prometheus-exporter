@@ -42,6 +42,8 @@ public class DemoDataLoader {
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile Thread loaderThread;
+    private final AtomicBoolean purging = new AtomicBoolean(false);
+    private final AtomicInteger purgeProgress = new AtomicInteger(0);
 
     /** Broker API uses regional endpoints, not the main anypoint.mulesoft.com */
     private static final Map<String, String> BROKER_URLS = Map.of(
@@ -209,6 +211,44 @@ public class DemoDataLoader {
 
     public boolean isRunning() {
         return running.get();
+    }
+
+    public boolean isPurging() {
+        return purging.get();
+    }
+
+    public int getPurgeProgress() {
+        return purgeProgress.get();
+    }
+
+    /**
+     * Start async background purge of all queues. Returns immediately.
+     * Poll /api/loader/status to monitor progress.
+     */
+    public boolean startAsyncPurge(String queuePrefix) {
+        if (!purging.compareAndSet(false, true)) {
+            return false; // already purging
+        }
+        purgeProgress.set(0);
+
+        Thread purgeThread = new Thread(() -> {
+            log.info("Background purge started");
+            try {
+                LoadResult result = consume(queuePrefix).block();
+                if (result != null) {
+                    log.info("Background purge complete: {} messages consumed from {} queues",
+                            result.getTotalMessagesConsumed(), result.getQueuesTargeted());
+                    purgeProgress.set(result.getTotalMessagesConsumed());
+                }
+            } catch (Exception e) {
+                log.error("Background purge error: {}", e.getMessage());
+            } finally {
+                purging.set(false);
+            }
+        }, "async-purge");
+        purgeThread.setDaemon(true);
+        purgeThread.start();
+        return true;
     }
 
     /**
