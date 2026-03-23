@@ -50,6 +50,10 @@ public class MqMetricsCollector {
     
     // Current queue stats for monitor integration
     private final ConcurrentHashMap<String, QueueStats> currentQueueStats = new ConcurrentHashMap<>();
+    
+    // Usage metrics collected on a slower cadence (every 30 minutes)
+    private volatile long lastUsageCollectionTime = 0;
+    private static final long USAGE_COLLECTION_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
 
     public MqMetricsCollector(AnypointMqClient mqClient, 
                               AnypointConfig anypointConfig, 
@@ -99,7 +103,7 @@ public class MqMetricsCollector {
         Timer.Sample sample = exporterMetrics.startScrapeTimer();
         
         try {
-            // Process all environments and regions + org-level usage
+            // Process all environments and regions (queue depth, throughput, exchanges)
             Mono<Void> envMetrics = Flux.fromIterable(anypointConfig.getEnvironments())
                     .flatMap(environment -> 
                             Flux.fromIterable(anypointConfig.getRegions())
@@ -107,10 +111,26 @@ public class MqMetricsCollector {
                     )
                     .then();
 
-            Mono<Void> orgUsage = collectOrgUsageMetrics();
             Mono<Void> auditMetrics = collectAuditLogMetrics();
 
-            Mono.when(envMetrics, orgUsage, auditMetrics)
+            // Usage/billing metrics on a slower cadence (every 30 min) — avoids 429 rate limits
+            long now = System.currentTimeMillis();
+            boolean collectUsage = (now - lastUsageCollectionTime) >= USAGE_COLLECTION_INTERVAL_MS;
+            Mono<Void> usageMetrics;
+            if (collectUsage) {
+                log.info("Collecting usage/billing metrics (30-min cadence)");
+                // Sequential: org usage first, then per-environment usage one at a time
+                usageMetrics = collectOrgUsageMetrics()
+                        .then(Flux.fromIterable(anypointConfig.getEnvironments())
+                                .concatMap(env -> collectUsageMetrics(env)
+                                        .delaySubscription(java.time.Duration.ofMillis(500)))
+                                .then())
+                        .doOnSuccess(v -> lastUsageCollectionTime = System.currentTimeMillis());
+            } else {
+                usageMetrics = Mono.empty();
+            }
+
+            Mono.when(envMetrics, auditMetrics, usageMetrics)
                     .doOnSuccess(v -> {
                         exporterMetrics.recordScrapeTime(sample);
                         log.info("Metrics collection completed successfully");
@@ -133,12 +153,11 @@ public class MqMetricsCollector {
     private Mono<Void> collectEnvironmentRegionMetrics(AnypointConfig.Environment environment, String region) {
         log.debug("Collecting metrics for environment {} ({}) in region {}", environment.getName(), environment.getId(), region);
         
-        // Collect queue metrics, exchange metrics, and usage stats in parallel
+        // Collect queue metrics and exchange metrics (usage collected separately on slower cadence)
         Mono<Void> queueMetrics = collectQueueMetrics(environment, region);
         Mono<Void> exchangeMetrics = collectExchangeMetrics(environment, region);
-        Mono<Void> usageMetrics = collectUsageMetrics(environment);
         
-        return Mono.when(queueMetrics, exchangeMetrics, usageMetrics)
+        return Mono.when(queueMetrics, exchangeMetrics)
                 .doOnSuccess(v -> log.debug("Completed metrics collection for environment {} in region {}", environment.getName(), region))
                 .doOnError(error -> {
                     exporterMetrics.incrementErrorCounter("environment_failed");
