@@ -420,7 +420,7 @@ All settings can be overridden via environment variables or `application.yml`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SCRAPE_INTERVAL_SECONDS` | `60` | How often to scrape metrics (seconds) |
+| `SCRAPE_INTERVAL_SECONDS` | `300` | How often to scrape metrics (seconds) |
 | `anypoint.scrape.periodSeconds` | `600` | Stats API bucket granularity (seconds) |
 | `anypoint.scrape.enabled` | `true` | Enable/disable metric collection |
 | `STALE_CHECK_INTERVAL_MS` | `300000` | Stale message detection interval (milliseconds, default 5 min) |

@@ -45,7 +45,7 @@ anypoint:
   regions:
     - us-east-1
   scrape:
-    intervalSeconds: ${SCRAPE_INTERVAL_SECONDS:60}
+    intervalSeconds: ${SCRAPE_INTERVAL_SECONDS:300}
     periodSeconds: 600
     enabled: true
     staleCheckIntervalMs: ${STALE_CHECK_INTERVAL_MS:300000}  # 5 minutes

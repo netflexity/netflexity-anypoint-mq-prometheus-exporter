@@ -86,7 +86,7 @@ public class MqMetricsCollector {
      * Scheduled metrics collection
      * Uses fixedDelayString to read interval from configuration
      */
-    @Scheduled(fixedDelayString = "${anypoint.scrape.intervalSeconds:60}000", initialDelayString = "${anypoint.scrape.intervalSeconds:60}000")
+    @Scheduled(fixedDelayString = "${anypoint.scrape.intervalSeconds:300}000", initialDelayString = "${anypoint.scrape.intervalSeconds:300}000")
     public void scheduledCollection() {
         if (!anypointConfig.getScrape().isEnabled()) {
             return;
