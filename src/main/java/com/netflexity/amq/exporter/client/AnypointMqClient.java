@@ -279,7 +279,7 @@ public class AnypointMqClient {
      * @param lookbackDays Number of days to look back (default 30)
      * @return Mono containing UsageStats
      */
-    public Mono<UsageStats> getUsageStats(String environmentId, int lookbackDays) {
+    public Mono<AggregatedUsageStats> getUsageStats(String environmentId, int lookbackDays) {
         Instant endTime = Instant.now();
         Instant startTime = endTime.minus(Duration.ofDays(lookbackDays));
 
@@ -298,7 +298,9 @@ public class AnypointMqClient {
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
                         .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get usage stats"))
-                        .bodyToMono(UsageStats.class))
+                        .bodyToFlux(UsageStats.class)
+                        .collectList()
+                        .map(AggregatedUsageStats::fromDailyStats))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError))
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
@@ -371,7 +373,7 @@ public class AnypointMqClient {
      * @param lookbackDays Number of days to look back
      * @return Mono containing UsageStats
      */
-    public Mono<UsageStats> getOrgUsageStats(int lookbackDays) {
+    public Mono<AggregatedUsageStats> getOrgUsageStats(int lookbackDays) {
         Instant endTime = Instant.now();
         Instant startTime = endTime.minus(Duration.ofDays(lookbackDays));
 
@@ -389,7 +391,9 @@ public class AnypointMqClient {
                         .header("Authorization", token.getAuthorizationHeader())
                         .retrieve()
                         .onStatus(HttpStatusCode::isError, response -> handleApiError(response, "get org usage stats"))
-                        .bodyToMono(UsageStats.class))
+                        .bodyToFlux(UsageStats.class)
+                        .collectList()
+                        .map(AggregatedUsageStats::fromDailyStats))
                 .retryWhen(Retry.backoff(anypointConfig.getHttp().getMaxRetries(), Duration.ofSeconds(1))
                         .filter(this::isRetryableError))
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))

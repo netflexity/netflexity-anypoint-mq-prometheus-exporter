@@ -2065,7 +2065,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent{$org,$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -2091,7 +2091,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_received{$org,$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -2117,7 +2117,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_acked{$org,$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -2138,7 +2138,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent{$org,$environment} by {environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment} by {environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -2180,7 +2180,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent{$org,$environment} by {environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment} by {environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -2201,7 +2201,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_received{$org,$environment} by {environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment} by {environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -2222,7 +2222,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_acked{$org,$environment} by {environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_message_receipts{$org,$environment} by {environment}"
                     }
                   ],
                   "response_format": "timeseries",

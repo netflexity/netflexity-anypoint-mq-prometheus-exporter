@@ -308,16 +308,14 @@ public class MqMetricsCollector {
                         String envOrgName = anypointConfig.getEnvironments().get(0).getOrgName();
                         if (envOrgName != null) orgName = envOrgName;
                     }
-                    updateGaugeMetric("anypoint_mq_org_usage_messages_sent_total",
-                            stats.getMessagesSent(), "org", orgName);
-                    updateGaugeMetric("anypoint_mq_org_usage_messages_received_total",
-                            stats.getMessagesReceived(), "org", orgName);
-                    updateGaugeMetric("anypoint_mq_org_usage_messages_acked_total",
-                            stats.getMessagesAcked(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_org_usage_message_receipts_total",
+                            stats.getMessageReceiptCount(), "org", orgName);
                     updateGaugeMetric("anypoint_mq_org_usage_billable_units_total",
                             stats.getBillableUnitCount(), "org", orgName);
                     updateGaugeMetric("anypoint_mq_org_usage_api_requests_total",
                             stats.getApiRequestCount(), "org", orgName);
+                    updateGaugeMetric("anypoint_mq_org_usage_message_bytes_total",
+                            stats.getMessageByteCount(), "org", orgName);
                     log.info("Updated org-level usage metrics: {}", stats.toSafeString());
                 })
                 .then()
@@ -335,20 +333,17 @@ public class MqMetricsCollector {
         String orgName = environment.getOrgName() != null ? environment.getOrgName() : "default";
         return mqClient.getUsageStats(environment.getId(), 30)
                 .doOnNext(stats -> {
-                    updateGaugeMetric("anypoint_mq_usage_messages_sent_total",
-                            stats.getMessagesSent(),
-                            "org", orgName, "environment", environment.getName());
-                    updateGaugeMetric("anypoint_mq_usage_messages_received_total",
-                            stats.getMessagesReceived(),
-                            "org", orgName, "environment", environment.getName());
-                    updateGaugeMetric("anypoint_mq_usage_messages_acked_total",
-                            stats.getMessagesAcked(),
+                    updateGaugeMetric("anypoint_mq_usage_message_receipts_total",
+                            stats.getMessageReceiptCount(),
                             "org", orgName, "environment", environment.getName());
                     updateGaugeMetric("anypoint_mq_usage_billable_units_total",
                             stats.getBillableUnitCount(),
                             "org", orgName, "environment", environment.getName());
                     updateGaugeMetric("anypoint_mq_usage_api_requests_total",
                             stats.getApiRequestCount(),
+                            "org", orgName, "environment", environment.getName());
+                    updateGaugeMetric("anypoint_mq_usage_message_bytes_total",
+                            stats.getMessageByteCount(),
                             "org", orgName, "environment", environment.getName());
                     log.info("Updated usage metrics for environment {}: {}", environment.getName(), stats.toSafeString());
                 })
@@ -499,14 +494,12 @@ public class MqMetricsCollector {
             case "anypoint_mq_exchange_messages_published_total" -> "Total messages published to exchange";
             case "anypoint_mq_exchange_messages_delivered_total" -> "Total messages delivered from exchange";
             case "anypoint_mq_queue_dequeue_rate_percent" -> "Queue dequeue rate (received/sent * 100)";
-            case "anypoint_mq_usage_messages_sent_total" -> "Total MQ API messages sent (30-day usage)";
-            case "anypoint_mq_usage_messages_received_total" -> "Total MQ API messages received (30-day usage)";
-            case "anypoint_mq_usage_messages_acked_total" -> "Total MQ API messages acknowledged (30-day usage)";
+            case "anypoint_mq_usage_message_receipts_total" -> "Total MQ message receipts (30-day usage)";
+            case "anypoint_mq_usage_message_bytes_total" -> "Total MQ message bytes (30-day usage)";
             case "anypoint_mq_usage_billable_units_total" -> "Total MQ billable units (30-day usage)";
             case "anypoint_mq_usage_api_requests_total" -> "Total MQ API requests (30-day usage)";
-            case "anypoint_mq_org_usage_messages_sent_total" -> "Org-level MQ messages sent (30-day)";
-            case "anypoint_mq_org_usage_messages_received_total" -> "Org-level MQ messages received (30-day)";
-            case "anypoint_mq_org_usage_messages_acked_total" -> "Org-level MQ messages acknowledged (30-day)";
+            case "anypoint_mq_org_usage_message_receipts_total" -> "Org-level MQ message receipts (30-day)";
+            case "anypoint_mq_org_usage_message_bytes_total" -> "Org-level MQ message bytes (30-day)";
             case "anypoint_mq_org_usage_billable_units_total" -> "Org-level MQ billable units (30-day)";
             case "anypoint_mq_org_usage_api_requests_total" -> "Org-level MQ API requests (30-day)";
             case "anypoint_mq_audit_changes_total" -> "Total MQ config changes detected in audit log";
