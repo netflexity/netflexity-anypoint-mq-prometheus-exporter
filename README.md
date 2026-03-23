@@ -70,7 +70,13 @@ No manual configuration of queue names. No YAML lists to maintain. It just works
                           v
 +---------------------------------------------------------+
 |                      Grafana                            |
-|     70 panels - 8 alert rules - Full observability      |
+|     70 panels - 10 alert rules - Full observability     |
++---------------------------------------------------------+
+
++---------------------------------------------------------+
+|                      Datadog                            |
+|   OpenMetrics check | 19 widget groups | 11 monitors   |
+|   Auto-provisioned dashboards + monitors on startup     |
 +---------------------------------------------------------+
 ```
 
@@ -219,7 +225,7 @@ The built-in loader creates realistic traffic patterns for dashboards. Essential
 ### One-Shot Operations
 
 ```bash
-# Publish 1-10 random messages to every queue
+# Publish 1-2 random messages to every queue
 curl -X POST http://localhost:9101/api/loader/load
 
 # Publish to specific queues by prefix
@@ -228,21 +234,35 @@ curl -X POST "http://localhost:9101/api/loader/load?queuePrefix=order&minMessage
 # Consume (purge) all messages from all queues
 curl -X POST http://localhost:9101/api/loader/consume
 
-# Full cycle: publish → wait 60s → consume (creates a traffic spike)
-curl -X POST "http://localhost:9101/api/loader/cycle?minMessages=5&maxMessages=15&delaySeconds=60"
+# Full cycle: publish → wait 30s → consume (creates a traffic spike)
+curl -X POST "http://localhost:9101/api/loader/cycle?minMessages=1&maxMessages=5&delaySeconds=30"
 ```
 
 ### Continuous Mode
 
 ```bash
-# Start continuous cycles every 5 minutes
-curl -X POST "http://localhost:9101/api/loader/start?intervalSeconds=300&minMessages=3&maxMessages=10"
+# Start continuous cycles every 10 minutes (default)
+curl -X POST "http://localhost:9101/api/loader/start?intervalSeconds=600&minMessages=1&maxMessages=2"
 
-# Check if the loader is running
+# Check loader and purge status
 curl http://localhost:9101/api/loader/status
 
 # Stop the loader
 curl -X POST http://localhost:9101/api/loader/stop
+```
+
+### Emergency Purge
+
+```bash
+# Stop loader + purge all queues in one call
+curl -X POST http://localhost:9101/api/loader/stop-and-purge
+
+# Async purge for large backlogs (returns immediately, drains in background)
+curl -X POST http://localhost:9101/api/loader/purge-async
+
+# Monitor async purge progress
+curl http://localhost:9101/api/loader/status
+# → {"running":false,"purging":true,"purgeProgress":4200}
 ```
 
 ### Debug / Troubleshoot
@@ -258,17 +278,27 @@ curl -X POST "http://localhost:9101/api/loader/test?queue=my-queue&environment=S
 |-----------|---------|-------------|
 | `queuePrefix` | *(all)* | Only target queues starting with this prefix |
 | `minMessages` | `1` | Minimum messages per queue per cycle |
-| `maxMessages` | `10` | Maximum messages per queue per cycle |
-| `delaySeconds` | `60` | Seconds between load and consume in a cycle |
-| `intervalSeconds` | `300` | Seconds between continuous mode cycles |
+| `maxMessages` | `2` | Maximum messages per queue per cycle |
+| `delaySeconds` | `30` | Seconds between load and consume in a cycle |
+| `intervalSeconds` | `600` | Seconds between continuous mode cycles (10 min) |
 
 ### How It Works
 
 1. Lists all queues via the Admin API (across all configured environments and regions)
-2. Publishes random JSON messages in batches of 10 (Broker API PUT)
-3. Optionally consumes messages by GET + DELETE (acknowledges each message)
-4. FIFO queues are handled sequentially; standard queues use parallel batches
+2. Publishes random JSON messages in batches of 10 (Broker API PUT), one queue at a time with 500ms throttle
+3. Consumes messages by GET + DELETE with 120-second message locks (acknowledges each message)
+4. FIFO queues are handled sequentially; standard queues use parallel deletes (10x concurrency)
 5. Messages have a 2-minute TTL so they self-clean even without explicit consume
+
+### Safety Guarantees (Continuous Mode)
+
+The continuous loader is designed to **never accumulate messages**:
+
+- **Pre-drain** — Every cycle starts by consuming any leftover messages before producing new ones
+- **Consume retry** — After loading, retries consume up to 3 times until `consumed >= published`
+- **Back-off** — If consume still fails after retries, pauses for 60 seconds before the next cycle
+- **Sequential throttle** — Publishes to one queue at a time with 500ms delay between queues (prevents flooding)
+- **120s message locks** — Locked messages won't bounce back during deletion (previously 30s)
 
 ## Tester's Guide
 
@@ -503,7 +533,9 @@ Configure notifications under **Alerting > Contact points** in Grafana (Slack, e
 | `/api/loader/cycle` | POST | Load → delay → consume (traffic spike) |
 | `/api/loader/start` | POST | Start continuous load/consume cycles |
 | `/api/loader/stop` | POST | Stop continuous loader |
-| `/api/loader/status` | GET | Check if continuous loader is running |
+| `/api/loader/stop-and-purge` | POST | Emergency: stop loader + drain all queues |
+| `/api/loader/purge-async` | POST | Background purge for large backlogs (returns immediately) |
+| `/api/loader/status` | GET | Loader status, purge progress |
 | `/api/loader/test` | POST | Debug: test single publish with full error output |
 | `/api/health-scores` | GET | Queue health scores |
 | `/api/monitors` | GET | Monitor definitions |
@@ -527,7 +559,28 @@ java -jar target/anypoint-mq-prometheus-exporter-*.jar
 
 ## Datadog Integration
 
-Already using Datadog? The exporter works with Datadog's built-in OpenMetrics check — zero additional code required.
+Already using Datadog? The exporter ships with **pre-built Datadog dashboards and monitors** that can auto-provision themselves on startup — or be imported manually. Zero additional code required.
+
+### Included Datadog Artifacts
+
+```
+datadog/
+  dashboard.json              # 19 widget groups — import or auto-provision
+  monitors/
+    all-monitors.json          # All 11 monitors in one file
+    import-monitors.sh         # One-command bulk import script
+    dlq-alert.json             # Individual monitor definitions
+    queue-depth-critical.json
+    high-inflight.json
+    stale-queue.json
+    stale-messages.json
+    throughput-drop.json
+    low-dequeue-rate.json
+    scrape-errors.json
+    mq-config-change.json
+    billable-unit-threshold.json
+    ...
+```
 
 ### Datadog Agent + OpenMetrics
 
