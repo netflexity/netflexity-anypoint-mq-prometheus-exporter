@@ -591,24 +591,13 @@ instances:
   - openmetrics_endpoint: http://exporter-host:9101/actuator/prometheus
     namespace: anypoint_mq
     metrics:
-      - anypoint_mq_queue_messages_in_queue
-      - anypoint_mq_queue_messages_in_flight
-      - anypoint_mq_queue_messages_sent_total
-      - anypoint_mq_queue_messages_received_total
-      - anypoint_mq_queue_messages_acked_total
-      - anypoint_mq_queue_dequeue_rate_percent
-      - anypoint_mq_queue_stale_messages
-      - anypoint_mq_exchange_messages_published_total
-      - anypoint_mq_exchange_messages_delivered_total
-      - anypoint_mq_usage_billable_units_total
-      - anypoint_mq_usage_api_requests_total
-      - anypoint_mq_audit_changes_total
+      - anypoint_mq_*
     tags:
       - service:anypoint-mq
       - env:production
 ```
 
-All metrics appear with their full label set (`org`, `environment`, `queue_name`, `region`) for filtering, grouping, and alerting.
+This wildcard pattern captures all metrics the exporter produces — queue depth, throughput, exchanges, usage/billing, audit, QoS, and health. All metrics include labels (`org`, `environment`, `queue_name`, `region`) for filtering, grouping, and alerting.
 
 ### Pre-built Datadog Dashboard
 
