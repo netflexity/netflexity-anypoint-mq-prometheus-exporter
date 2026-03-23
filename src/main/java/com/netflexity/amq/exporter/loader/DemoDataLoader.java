@@ -339,9 +339,9 @@ public class DemoDataLoader {
                             .doOnSuccess(consumed -> {
                                 result.addConsumed(consumed);
                                 result.addQueue(queue.getQueueId());
-                                log.debug("Consumed {} messages from queue {}", consumed, queue.getQueueId());
+                                log.info("Consumed {} messages from queue {}", consumed, queue.getQueueId());
                             });
-                }, 4)
+                }, 6)
                 .then();
     }
 
@@ -439,7 +439,7 @@ public class DemoDataLoader {
         return authClient.getAccessToken()
                 .flatMap(token -> {
                     String getUrl = String.format(
-                            "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages?batchSize=10&pollingTime=1000&lockTtl=30000",
+                            "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages?batchSize=10&pollingTime=500&lockTtl=120000",
                             getBrokerUrl(region),
                             anypointConfig.getOrganizationId(),
                             environmentId,
@@ -460,7 +460,7 @@ public class DemoDataLoader {
                                         }
                                         return Flux.fromIterable(messages)
                                                 .flatMap(msg -> deleteMessage(token.getAuthorizationHeader(),
-                                                        environmentId, region, queueId, msg), isFifo ? 1 : 5)
+                                                        environmentId, region, queueId, msg), isFifo ? 1 : 10)
                                                 .doOnNext(v -> consumed.incrementAndGet())
                                                 .then(Mono.just(messages.size()));
                                     }))
