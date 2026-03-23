@@ -143,6 +143,21 @@ public class LoaderController {
     }
 
     /**
+     * Emergency: Stop the loader AND purge all queues in one call.
+     */
+    @PostMapping("/stop-and-purge")
+    public Mono<ResponseEntity<Map<String, Object>>> stopAndPurge(
+            @RequestParam(required = false) String queuePrefix) {
+        loader.stop();
+        log.warn("Emergency stop-and-purge requested");
+        return loader.consume(queuePrefix)
+                .map(result -> ResponseEntity.ok(Map.of(
+                        "loaderStopped", true,
+                        "messagesConsumed", result.getTotalMessagesConsumed(),
+                        "queuesTargeted", result.getQueuesTargeted())));
+    }
+
+    /**
      * Debug: Try publishing a single message to a specific queue and return the raw result/error.
      */
     @PostMapping("/test")

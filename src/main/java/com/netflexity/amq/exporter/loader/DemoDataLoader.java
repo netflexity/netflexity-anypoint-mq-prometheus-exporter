@@ -128,6 +128,10 @@ public class DemoDataLoader {
 
     /**
      * Start continuous load/consume cycles on an interval.
+     * 
+     * SAFETY: Each cycle loads a small batch, then ALWAYS consumes before the next load.
+     * If consume fails or doesn't drain fully, the cycle pauses (no new messages produced).
+     * This guarantees we never accumulate messages across cycles.
      */
     public boolean startContinuous(String queuePrefix, int minMessages, int maxMessages, 
                                     int delaySeconds, int intervalSeconds) {
@@ -141,14 +145,46 @@ public class DemoDataLoader {
                     intervalSeconds, delaySeconds, minMessages, maxMessages);
             while (running.get()) {
                 try {
-                    cycle(queuePrefix, minMessages, maxMessages, delaySeconds).block();
+                    // Step 1: Consume any leftover messages FIRST (safety drain)
+                    LoadResult preDrain = consume(queuePrefix).block();
+                    if (preDrain != null && preDrain.getTotalMessagesConsumed() > 0) {
+                        log.info("Pre-drain consumed {} leftover messages before new load", 
+                                preDrain.getTotalMessagesConsumed());
+                    }
+
+                    // Step 2: Load a small batch
+                    LoadResult loadResult = load(queuePrefix, minMessages, maxMessages).block();
+                    int published = loadResult != null ? loadResult.getTotalMessagesPublished() : 0;
+
+                    // Step 3: Wait for messages to be visible
+                    Thread.sleep(delaySeconds * 1000L);
+
+                    // Step 4: Consume — must drain everything we published (retry up to 3 times)
+                    int totalConsumed = 0;
+                    for (int attempt = 1; attempt <= 3 && running.get(); attempt++) {
+                        LoadResult consumeResult = consume(queuePrefix).block();
+                        int consumed = consumeResult != null ? consumeResult.getTotalMessagesConsumed() : 0;
+                        totalConsumed += consumed;
+                        if (totalConsumed >= published) break;
+                        log.warn("Consume attempt {}: only consumed {}/{} — retrying in 5s", 
+                                attempt, totalConsumed, published);
+                        Thread.sleep(5000);
+                    }
+
+                    if (totalConsumed < published) {
+                        log.error("FAILED to consume all messages: published={}, consumed={}. Pausing loader for 60s.",
+                                published, totalConsumed);
+                        Thread.sleep(60_000); // back off before next cycle
+                    }
+
+                    // Step 5: Wait for next cycle
                     Thread.sleep(intervalSeconds * 1000L);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     break;
                 } catch (Exception e) {
                     log.error("Error in continuous loader cycle: {}", e.getMessage());
-                    try { Thread.sleep(5000); } catch (InterruptedException ie) { break; }
+                    try { Thread.sleep(10_000); } catch (InterruptedException ie) { break; }
                 }
             }
             log.info("Continuous demo loader stopped");
@@ -239,7 +275,7 @@ public class DemoDataLoader {
                                               LoadResult result) {
         return listQueues(env.getId(), region)
                 .filter(queue -> matchesPrefix(queue.getQueueId(), queuePrefix))
-                .flatMap(queue -> {
+                .concatMap(queue -> {  // concatMap = sequential, one queue at a time (no flooding)
                     int count = ThreadLocalRandom.current().nextInt(minMessages, maxMessages + 1);
                     boolean isFifo = Boolean.TRUE.equals(queue.getFifo());
                     return publishMessages(env.getId(), region, queue.getQueueId(), count, isFifo)
@@ -247,8 +283,9 @@ public class DemoDataLoader {
                                 result.addPublished(published);
                                 result.addQueue(queue.getQueueId());
                                 log.debug("Published {} messages to queue {} (fifo={})", published, queue.getQueueId(), isFifo);
-                            });
-                }, 4)  // concurrency limit
+                            })
+                            .delayElement(Duration.ofMillis(500));  // 500ms between queues
+                })
                 .then();
     }
 
