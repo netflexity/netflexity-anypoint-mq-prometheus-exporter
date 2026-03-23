@@ -376,7 +376,7 @@
                   ],
                   "formulas": [
                     {
-                      "formula": "hour_before(query1)"
+                      "formula": "query1"
                     }
                   ],
                   "change_type": "absolute",
