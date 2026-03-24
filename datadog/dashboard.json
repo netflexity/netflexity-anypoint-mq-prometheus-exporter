@@ -813,7 +813,7 @@
                     {
                       "data_source": "metrics",
                       "name": "query1",
-                      "query": "sum:anypoint_mq.anypoint_mq_scrape_errors_total{$environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_scrape_errors{$environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1637,7 +1637,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent_total{$org,$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -1663,7 +1663,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_received_total{$org,$environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_received{$org,$environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -1684,7 +1684,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent_total{$org,$environment} by {environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment} by {environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -1726,7 +1726,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_sent_total{$org,$environment} by {environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_sent{$org,$environment} by {environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1747,7 +1747,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_messages_received_total{$org,$environment} by {environment}"
+                      "query": "sum:anypoint_mq.anypoint_mq_queue_messages_received{$org,$environment} by {environment}"
                     }
                   ],
                   "response_format": "timeseries",
@@ -1787,7 +1787,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_billable_units_total{$org,$environment} by {environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_billable_units{$org,$environment} by {environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -1813,7 +1813,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_usage_api_requests_total{$org,$environment} by {environment}",
+                      "query": "sum:anypoint_mq.anypoint_mq_usage_api_requests{$org,$environment} by {environment}",
                       "aggregator": "last"
                     }
                   ],
@@ -1839,7 +1839,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_org_usage_billable_units_total{$org}",
+                      "query": "sum:anypoint_mq.anypoint_mq_org_usage_billable_units{$org}",
                       "aggregator": "last"
                     }
                   ],
@@ -1865,7 +1865,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_org_usage_api_requests_total{$org}",
+                      "query": "sum:anypoint_mq.anypoint_mq_org_usage_api_requests{$org}",
                       "aggregator": "last"
                     }
                   ],
@@ -1981,7 +1981,7 @@
                     {
                       "name": "query1",
                       "data_source": "metrics",
-                      "query": "sum:anypoint_mq.anypoint_mq_audit_changes_total{$org}",
+                      "query": "sum:anypoint_mq.anypoint_mq_audit_changes{$org}",
                       "aggregator": "last"
                     }
                   ],
