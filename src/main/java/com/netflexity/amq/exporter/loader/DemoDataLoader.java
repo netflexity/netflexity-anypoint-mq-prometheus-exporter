@@ -129,11 +129,68 @@ public class DemoDataLoader {
     }
 
     /**
+     * Targeted consume: consume exactly the specified number of messages from a specific queue.
+     * Retries up to 3 times if not all messages are consumed.
+     */
+    private Mono<Integer> consumeExact(String environmentId, String region, String queueId, int targetCount, boolean isFifo) {
+        AtomicInteger consumed = new AtomicInteger(0);
+        
+        return authClient.getAccessToken()
+                .flatMap(token -> {
+                    String getUrl = String.format(
+                            "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages?batchSize=%d&pollingTime=1000&lockTtl=120000",
+                            getBrokerUrl(region),
+                            anypointConfig.getOrganizationId(),
+                            environmentId,
+                            queueId,
+                            Math.min(targetCount, 10));
+
+                    return Mono.defer(() -> webClient.get()
+                                    .uri(getUrl)
+                                    .header("Authorization", token.getAuthorizationHeader())
+                                    .header("X-ANYPNT-ORG-ID", anypointConfig.getOrganizationId())
+                                    .header("X-ANYPNT-ENV-ID", environmentId)
+                                    .retrieve()
+                                    .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                                    .defaultIfEmpty(Collections.emptyList())
+                                    .flatMap(messages -> {
+                                        if (messages.isEmpty()) return Mono.just(0);
+                                        return Flux.fromIterable(messages)
+                                                .flatMap(msg -> deleteMessage(token.getAuthorizationHeader(),
+                                                        environmentId, region, queueId, msg), isFifo ? 1 : 10)
+                                                .doOnNext(v -> consumed.incrementAndGet())
+                                                .then(Mono.just(messages.size()));
+                                    }))
+                            .repeat()
+                            .takeWhile(count -> count > 0 && consumed.get() < targetCount)
+                            .then(Mono.fromCallable(consumed::get));
+                })
+                .onErrorResume(e -> {
+                    log.warn("Error consuming from queue {}: {}", queueId, e.getMessage());
+                    return Mono.just(consumed.get());
+                });
+    }
+
+    /**
+     * Track what was published per queue so consume can target the same queues/counts.
+     */
+    @Data
+    private static class QueuePublishRecord {
+        final String environmentId;
+        final String region;
+        final String queueId;
+        final int count;
+        final boolean fifo;
+    }
+
+    /**
      * Start continuous load/consume cycles on an interval.
      * 
-     * SAFETY: Each cycle loads a small batch, then ALWAYS consumes before the next load.
-     * If consume fails or doesn't drain fully, the cycle pauses (no new messages produced).
-     * This guarantees we never accumulate messages across cycles.
+     * SAFETY:
+     * 1. Purges all queues on startup (clean slate)
+     * 2. Tracks exactly which queue got how many messages during load
+     * 3. Consumes the SAME queues with the SAME counts (targeted, not generic drain)
+     * 4. If consume fails, pauses before next cycle
      */
     public boolean startContinuous(String queuePrefix, int minMessages, int maxMessages, 
                                     int delaySeconds, int intervalSeconds) {
@@ -145,41 +202,80 @@ public class DemoDataLoader {
         loaderThread = new Thread(() -> {
             log.info("Starting continuous demo loader: interval={}s, delay={}s, msgs={}-{}", 
                     intervalSeconds, delaySeconds, minMessages, maxMessages);
+            
+            // Step 0: Purge ALL queues on startup (clean slate for the demo)
+            try {
+                log.info("Startup purge: draining all queues...");
+                LoadResult startupPurge = consume(queuePrefix).block();
+                if (startupPurge != null && startupPurge.getTotalMessagesConsumed() > 0) {
+                    log.info("Startup purge consumed {} messages from {} queues", 
+                            startupPurge.getTotalMessagesConsumed(), startupPurge.getQueuesTargeted());
+                }
+                // Wait for TTL expiry of any messages we couldn't consume
+                Thread.sleep(130_000); // 2min 10s (TTL is 2min)
+                // Second pass to catch TTL-expired re-queued messages
+                LoadResult secondPass = consume(queuePrefix).block();
+                if (secondPass != null && secondPass.getTotalMessagesConsumed() > 0) {
+                    log.info("Startup purge pass 2: consumed {} more messages", secondPass.getTotalMessagesConsumed());
+                }
+            } catch (Exception e) {
+                log.warn("Startup purge failed: {}", e.getMessage());
+            }
+            
             while (running.get()) {
                 try {
-                    // Step 1: Consume any leftover messages FIRST (safety drain)
-                    LoadResult preDrain = consume(queuePrefix).block();
-                    if (preDrain != null && preDrain.getTotalMessagesConsumed() > 0) {
-                        log.info("Pre-drain consumed {} leftover messages before new load", 
-                                preDrain.getTotalMessagesConsumed());
-                    }
+                    // Step 1: Load and track per-queue publish counts
+                    List<QueuePublishRecord> publishRecords = Collections.synchronizedList(new ArrayList<>());
+                    
+                    Flux.fromIterable(anypointConfig.getEnvironments())
+                            .flatMap(env -> Flux.fromIterable(anypointConfig.getRegions())
+                                    .flatMap(region -> listQueues(env.getId(), region)
+                                            .filter(queue -> matchesPrefix(queue.getQueueId(), queuePrefix))
+                                            .concatMap(queue -> {
+                                                int count = ThreadLocalRandom.current().nextInt(minMessages, maxMessages + 1);
+                                                boolean isFifo = Boolean.TRUE.equals(queue.getFifo());
+                                                return publishMessages(env.getId(), region, queue.getQueueId(), count, isFifo)
+                                                        .doOnSuccess(published -> {
+                                                            if (published > 0) {
+                                                                publishRecords.add(new QueuePublishRecord(
+                                                                        env.getId(), region, queue.getQueueId(), published, isFifo));
+                                                            }
+                                                        })
+                                                        .delayElement(Duration.ofMillis(500));
+                                            })))
+                            .then().block();
+                    
+                    int totalPublished = publishRecords.stream().mapToInt(r -> r.count).sum();
+                    log.info("Published {} messages across {} queues", totalPublished, publishRecords.size());
 
-                    // Step 2: Load a small batch
-                    LoadResult loadResult = load(queuePrefix, minMessages, maxMessages).block();
-                    int published = loadResult != null ? loadResult.getTotalMessagesPublished() : 0;
-
-                    // Step 3: Wait for messages to be visible
+                    // Step 2: Wait for messages to be visible
                     Thread.sleep(delaySeconds * 1000L);
 
-                    // Step 4: Consume — must drain everything we published (retry up to 3 times)
+                    // Step 3: Consume EXACTLY what we published, queue by queue
                     int totalConsumed = 0;
-                    for (int attempt = 1; attempt <= 3 && running.get(); attempt++) {
-                        LoadResult consumeResult = consume(queuePrefix).block();
-                        int consumed = consumeResult != null ? consumeResult.getTotalMessagesConsumed() : 0;
+                    for (QueuePublishRecord record : publishRecords) {
+                        if (!running.get()) break;
+                        int consumed = consumeExact(record.environmentId, record.region, 
+                                record.queueId, record.count, record.fifo).block();
                         totalConsumed += consumed;
-                        if (totalConsumed >= published) break;
-                        log.warn("Consume attempt {}: only consumed {}/{} — retrying in 5s", 
-                                attempt, totalConsumed, published);
-                        Thread.sleep(5000);
+                        log.debug("Consumed {}/{} from queue {}", consumed, record.count, record.queueId);
                     }
 
-                    if (totalConsumed < published) {
-                        log.error("FAILED to consume all messages: published={}, consumed={}. Pausing loader for 60s.",
-                                published, totalConsumed);
-                        Thread.sleep(60_000); // back off before next cycle
+                    if (totalConsumed < totalPublished) {
+                        log.warn("Consume gap: published={}, consumed={}. Retrying in 10s...", totalPublished, totalConsumed);
+                        Thread.sleep(10_000);
+                        // Retry pass on queues that didn't fully drain
+                        for (QueuePublishRecord record : publishRecords) {
+                            if (!running.get()) break;
+                            int extra = consumeExact(record.environmentId, record.region,
+                                    record.queueId, record.count, record.fifo).block();
+                            totalConsumed += extra;
+                        }
                     }
+                    
+                    log.info("Cycle complete: published={}, consumed={}", totalPublished, totalConsumed);
 
-                    // Step 5: Wait for next cycle
+                    // Step 4: Wait for next cycle
                     Thread.sleep(intervalSeconds * 1000L);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
