@@ -362,15 +362,10 @@
           {
             "id": 3600137678637076,
             "definition": {
-              "title": "Queue Backlog Change (1h)",
-              "type": "change",
+              "title": "Queue Depth (Current)",
+              "type": "toplist",
               "requests": [
                 {
-                  "formulas": [
-                    {
-                      "formula": "hour_before(query1)"
-                    }
-                  ],
                   "queries": [
                     {
                       "data_source": "metrics",
@@ -379,7 +374,39 @@
                       "aggregator": "last"
                     }
                   ],
-                  "response_format": "scalar"
+                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "query1"
+                    }
+                  ],
+                  "sort": {
+                    "count": 20,
+                    "order_by": [
+                      {
+                        "type": "formula",
+                        "index": 0,
+                        "order": "desc"
+                      }
+                    ]
+                  },
+                  "conditional_formats": [
+                    {
+                      "comparator": ">",
+                      "value": 80,
+                      "palette": "white_on_red"
+                    },
+                    {
+                      "comparator": ">",
+                      "value": 50,
+                      "palette": "white_on_yellow"
+                    },
+                    {
+                      "comparator": ">=",
+                      "value": 0,
+                      "palette": "white_on_green"
+                    }
+                  ]
                 }
               ]
             }
