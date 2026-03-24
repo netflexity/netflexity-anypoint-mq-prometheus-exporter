@@ -377,13 +377,14 @@
                   ],
                   "formulas": [
                     {
-                      "formula": "hour_before(query1)"
+                      "formula": "query1"
                     }
                   ],
                   "change_type": "absolute",
                   "compare_to": "hour_before",
                   "order_by": "change",
-                  "order_dir": "desc"
+                  "order_dir": "desc",
+                  "increase_good": false
                 }
               ]
             }
