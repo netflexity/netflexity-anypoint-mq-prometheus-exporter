@@ -379,33 +379,6 @@
                     {
                       "formula": "query1"
                     }
-                  ],
-                  "sort": {
-                    "count": 20,
-                    "order_by": [
-                      {
-                        "type": "formula",
-                        "index": 0,
-                        "order": "desc"
-                      }
-                    ]
-                  },
-                  "conditional_formats": [
-                    {
-                      "comparator": ">",
-                      "value": 80,
-                      "palette": "white_on_red"
-                    },
-                    {
-                      "comparator": ">",
-                      "value": 50,
-                      "palette": "white_on_yellow"
-                    },
-                    {
-                      "comparator": ">=",
-                      "value": 0,
-                      "palette": "white_on_green"
-                    }
                   ]
                 }
               ]
