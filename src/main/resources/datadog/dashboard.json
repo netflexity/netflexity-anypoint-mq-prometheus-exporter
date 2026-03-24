@@ -366,7 +366,11 @@
               "type": "change",
               "requests": [
                 {
-                  "response_format": "scalar",
+                  "formulas": [
+                    {
+                      "formula": "hour_before(query1)"
+                    }
+                  ],
                   "queries": [
                     {
                       "data_source": "metrics",
@@ -375,16 +379,7 @@
                       "aggregator": "last"
                     }
                   ],
-                  "formulas": [
-                    {
-                      "formula": "query1"
-                    }
-                  ],
-                  "change_type": "absolute",
-                  "compare_to": "hour_before",
-                  "order_by": "change",
-                  "order_dir": "desc",
-                  "increase_good": false
+                  "response_format": "scalar"
                 }
               ]
             }
