@@ -169,12 +169,11 @@ public class LoaderController {
     public Mono<ResponseEntity<Map<String, Object>>> stopAndPurge(
             @RequestParam(required = false) String queuePrefix) {
         loader.stop();
-        log.warn("Emergency stop-and-purge requested");
-        return loader.consume(queuePrefix)
-                .map(result -> ResponseEntity.ok(Map.of(
+        log.warn("Emergency stop-and-purge: using server-side purge");
+        return loader.purgeAllServerSide(queuePrefix)
+                .map(purged -> ResponseEntity.ok(Map.of(
                         "loaderStopped", true,
-                        "messagesConsumed", result.getTotalMessagesConsumed(),
-                        "queuesTargeted", result.getQueuesTargeted())));
+                        "queuesPurged", purged)));
     }
 
     /**

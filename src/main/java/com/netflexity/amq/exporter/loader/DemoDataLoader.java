@@ -203,21 +203,13 @@ public class DemoDataLoader {
             log.info("Starting continuous demo loader: interval={}s, delay={}s, msgs={}-{}", 
                     intervalSeconds, delaySeconds, minMessages, maxMessages);
             
-            // Step 0: Purge ALL queues on startup (clean slate for the demo)
+            // Step 0: Server-side purge ALL queues on startup (clean slate, instant)
             try {
-                log.info("Startup purge: draining all queues...");
-                LoadResult startupPurge = consume(queuePrefix).block();
-                if (startupPurge != null && startupPurge.getTotalMessagesConsumed() > 0) {
-                    log.info("Startup purge consumed {} messages from {} queues", 
-                            startupPurge.getTotalMessagesConsumed(), startupPurge.getQueuesTargeted());
-                }
-                // Wait for TTL expiry of any messages we couldn't consume
-                Thread.sleep(130_000); // 2min 10s (TTL is 2min)
-                // Second pass to catch TTL-expired re-queued messages
-                LoadResult secondPass = consume(queuePrefix).block();
-                if (secondPass != null && secondPass.getTotalMessagesConsumed() > 0) {
-                    log.info("Startup purge pass 2: consumed {} more messages", secondPass.getTotalMessagesConsumed());
-                }
+                log.info("Startup purge: server-side purge of all queues...");
+                Integer purged = purgeAllServerSide(queuePrefix).block();
+                log.info("Startup purge complete: {} queues purged server-side", purged);
+                // Brief pause to let MQ settle
+                Thread.sleep(5_000);
             } catch (Exception e) {
                 log.warn("Startup purge failed: {}", e.getMessage());
             }
@@ -573,6 +565,53 @@ public class DemoDataLoader {
                     log.warn("Error purging queue {}: {}", queueId, e.getMessage());
                     return Mono.just(consumed.get());
                 });
+    }
+
+    /**
+     * Server-side purge: DELETE all messages from a queue via the Admin API.
+     * This is instant — no need to GET+DELETE message by message.
+     */
+    private Mono<Void> purgeQueueServerSide(String environmentId, String region, String queueId) {
+        String url = String.format(
+                "%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations/queues/%s/messages",
+                anypointConfig.getBaseUrl(),
+                anypointConfig.getOrganizationId(),
+                environmentId,
+                region,
+                queueId);
+
+        return authClient.getAccessToken()
+                .flatMap(token -> webClient.delete()
+                        .uri(url)
+                        .header("Authorization", token.getAuthorizationHeader())
+                        .retrieve()
+                        .onStatus(HttpStatusCode::isError, resp ->
+                                resp.bodyToMono(String.class)
+                                        .flatMap(body -> {
+                                            log.warn("Server-side purge failed for {}: {} {}", queueId, resp.statusCode(), body);
+                                            return Mono.empty();
+                                        }))
+                        .bodyToMono(Void.class))
+                .doOnSuccess(v -> log.info("Server-side purge complete for queue {}", queueId))
+                .onErrorResume(e -> {
+                    log.warn("Error purging queue {} server-side: {}", queueId, e.getMessage());
+                    return Mono.empty();
+                });
+    }
+
+    /**
+     * Purge ALL queues across all environments/regions using the server-side Admin API.
+     */
+    public Mono<Integer> purgeAllServerSide(String queuePrefix) {
+        AtomicInteger purgedQueues = new AtomicInteger(0);
+        return Flux.fromIterable(anypointConfig.getEnvironments())
+                .flatMap(env -> Flux.fromIterable(anypointConfig.getRegions())
+                        .flatMap(region -> listQueues(env.getId(), region)
+                                .filter(queue -> matchesPrefix(queue.getQueueId(), queuePrefix))
+                                .concatMap(queue -> purgeQueueServerSide(env.getId(), region, queue.getQueueId())
+                                        .doOnSuccess(v -> purgedQueues.incrementAndGet())
+                                        .delayElement(Duration.ofMillis(200)))))
+                .then(Mono.fromCallable(purgedQueues::get));
     }
 
     @SuppressWarnings("unchecked")
