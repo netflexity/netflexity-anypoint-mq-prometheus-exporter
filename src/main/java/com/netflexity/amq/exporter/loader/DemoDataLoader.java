@@ -403,8 +403,11 @@ public class DemoDataLoader {
                                               LoadResult result) {
         return listQueues(env.getId(), region)
                 .filter(queue -> matchesPrefix(queue.getQueueId(), queuePrefix))
-                .concatMap(queue -> {  // concatMap = sequential, one queue at a time (no flooding)
-                    int count = ThreadLocalRandom.current().nextInt(minMessages, maxMessages + 1);
+                .index()
+                .concatMap(indexed -> {  // concatMap = sequential, one queue at a time (no flooding)
+                    Queue queue = indexed.getT2();
+                    long index = indexed.getT1();
+                    int count = computeQueueMessageCount(index, queue.getQueueId(), minMessages, maxMessages);
                     boolean isFifo = Boolean.TRUE.equals(queue.getFifo());
                     return publishMessages(env.getId(), region, queue.getQueueId(), count, isFifo)
                             .doOnSuccess(published -> {
@@ -415,6 +418,46 @@ public class DemoDataLoader {
                             .delayElement(Duration.ofMillis(500));  // 500ms between queues
                 })
                 .then();
+    }
+
+    /**
+     * Compute a varied message count per queue so charts show realistic traffic patterns
+     * instead of a uniform "brick". Uses a hash of the queue name to assign each queue
+     * a stable traffic tier (high/medium/low), then randomizes within that tier's range.
+     *
+     * Traffic distribution: ~20% high (70-100% of max), ~50% medium (25-70%), ~30% low (min-25%).
+     * A small jitter is added each cycle so the chart isn't static.
+     */
+    private int computeQueueMessageCount(long index, String queueId, int minMessages, int maxMessages) {
+        if (maxMessages <= minMessages) {
+            return minMessages;
+        }
+
+        int range = maxMessages - minMessages;
+        // Use queue name hash for a stable tier assignment across cycles
+        int hash = Math.abs(queueId.hashCode());
+        int tier = hash % 10; // 0-9
+
+        double low, high;
+        if (tier < 2) {
+            // ~20% of queues: high traffic (70-100% of range)
+            low = 0.70;
+            high = 1.0;
+        } else if (tier < 7) {
+            // ~50% of queues: medium traffic (25-70% of range)
+            low = 0.25;
+            high = 0.70;
+        } else {
+            // ~30% of queues: low traffic (0-25% of range)
+            low = 0.0;
+            high = 0.25;
+        }
+
+        int tierMin = minMessages + (int) (range * low);
+        int tierMax = minMessages + (int) (range * high);
+        tierMax = Math.max(tierMax, tierMin + 1); // ensure at least some variation
+
+        return ThreadLocalRandom.current().nextInt(tierMin, tierMax + 1);
     }
 
     private Mono<Void> consumeEnvironmentRegion(AnypointConfig.Environment env, String region,
