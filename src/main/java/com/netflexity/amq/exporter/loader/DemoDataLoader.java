@@ -558,6 +558,7 @@ public class DemoDataLoader {
                         .doOnNext(e -> {
                             e.setRegion(region);
                             e.setEnvironment(environmentId);
+                            log.info("Found exchange: {} in env={} region={}", e.getExchangeId(), environmentId, region);
                         }));
     }
 
@@ -611,7 +612,7 @@ public class DemoDataLoader {
                                     .doOnSuccess(resp -> published.addAndGet(batch.size()))
                                     .retryWhen(Retry.backoff(2, Duration.ofMillis(500)))
                                     .onErrorResume(e -> {
-                                        log.warn("Failed to publish batch to exchange {}: {}", exchangeId, e.getMessage());
+                                        log.error("Failed to publish batch to exchange {}: {}", exchangeId, e.getMessage(), e);
                                         return Mono.empty();
                                     });
                         })
