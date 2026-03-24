@@ -58,11 +58,7 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
-        <!-- Micrometer Datadog registry — push metrics directly to DD API -->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-datadog</artifactId>
-        </dependency>
+
 
         <!-- Lombok for reducing boilerplate code -->
         <dependency>

@@ -9,8 +9,7 @@ spring:
   main:
     lazy-initialization: false
   autoconfigure:
-    exclude:
-      - org.springframework.boot.actuate.autoconfigure.metrics.export.datadog.DatadogMetricsExportAutoConfiguration
+    exclude: []
 
 management:
   endpoints:
@@ -30,7 +29,7 @@ management:
     export:
       prometheus:
         enabled: true
-      # Datadog: activate with SPRING_PROFILES_ACTIVE=datadog (see application-datadog.yml)
+
 
 anypoint:
   baseUrl: https://anypoint.mulesoft.com
