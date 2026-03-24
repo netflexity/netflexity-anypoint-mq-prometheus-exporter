@@ -31,7 +31,7 @@ management:
         enabled: true
       datadog:
         enabled: ${DATADOG_METRICS_ENABLED:false}
-        api-key: ${DATADOG_API_KEY:}
+        api-key: ${DATADOG_API_KEY:disabled}
         uri: https://${DATADOG_SITE:api.datadoghq.com}
         step: ${DATADOG_METRICS_STEP:60s}
         descriptions: true
