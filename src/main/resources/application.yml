@@ -29,6 +29,12 @@ management:
     export:
       prometheus:
         enabled: true
+      datadog:
+        enabled: ${DATADOG_METRICS_ENABLED:false}
+        api-key: ${DATADOG_API_KEY:}
+        uri: https://${DATADOG_SITE:api.datadoghq.com}
+        step: ${DATADOG_METRICS_STEP:60s}
+        descriptions: true
 
 anypoint:
   baseUrl: https://anypoint.mulesoft.com
