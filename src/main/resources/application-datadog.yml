@@ -1,0 +1,17 @@
+# Datadog metrics profile — activates direct metrics push to Datadog API.
+# Enable with: SPRING_PROFILES_ACTIVE=datadog
+# Required env var: DATADOG_API_KEY
+
+spring:
+  autoconfigure:
+    exclude: []
+
+management:
+  metrics:
+    export:
+      datadog:
+        enabled: true
+        api-key: ${DATADOG_API_KEY}
+        uri: https://${DATADOG_SITE:api.datadoghq.com}
+        step: ${DATADOG_METRICS_STEP:60s}
+        descriptions: true
