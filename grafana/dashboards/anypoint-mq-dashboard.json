@@ -502,54 +502,6 @@
       ]
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "spanNulls": true,
-            "showPoints": "never"
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 23
-      },
-      "id": 22,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "bottom",
-          "calcs": [
-            "lastNotNull",
-            "sum"
-          ]
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "title": "Messages Acknowledged (per scrape)",
-      "type": "timeseries",
-      "targets": [
-        {
-          "expr": "anypoint_mq_queue_messages_acked{org=~\"$org\", environment=~\"$environment\", queue_name=~\"$queue\"}",
-          "legendFormat": "{{org}} / {{environment}} / {{queue_name}}"
-        }
-      ]
-    },
-    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
@@ -667,7 +619,8 @@
       },
       "id": 104,
       "title": "Queue Inventory",
-      "type": "row"
+      "type": "row",
+      "targets": []
     },
     {
       "datasource": {
@@ -790,7 +743,8 @@
       },
       "id": 105,
       "title": "Exporter Health",
-      "type": "row"
+      "type": "row",
+      "targets": []
     },
     {
       "datasource": {
@@ -1130,89 +1084,6 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "Fires when a queue has messages but zero acknowledgments for 30 minutes. No consumers may be processing.",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 20,
-            "spanNulls": true,
-            "showPoints": "never"
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 63
-      },
-      "id": 204,
-      "alert": {
-        "name": "Stale Queue - No Consumer Activity",
-        "conditions": [
-          {
-            "evaluator": {
-              "params": [
-                0
-              ],
-              "type": "gt"
-            },
-            "operator": {
-              "type": "and"
-            },
-            "query": {
-              "params": [
-                "A",
-                "30m",
-                "now"
-              ]
-            },
-            "reducer": {
-              "params": [],
-              "type": "last"
-            },
-            "type": "query"
-          }
-        ],
-        "executionErrorState": "alerting",
-        "for": "30m",
-        "frequency": "1m",
-        "noDataState": "no_data",
-        "notifications": [],
-        "message": "Queue {{ $labels.queue_name }} has messages but no acknowledgments for 30 minutes. Check if consumers are running.",
-        "alertRuleTags": {
-          "severity": "warning"
-        }
-      },
-      "options": {
-        "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "multi"
-        }
-      },
-      "title": "\ud83d\udfe1 Stale Queue (Messages, No Acks)",
-      "type": "timeseries",
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "anypoint_mq_queue_messages_in_queue > 0 and anypoint_mq_queue_messages_acked == 0",
-          "legendFormat": "{{ environment }} / {{ queue_name }}"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
       "description": "Fires when the exporter encounters scrape errors in the last 15 minutes.",
       "fieldConfig": {
         "defaults": {
@@ -1402,228 +1273,6 @@
         },
         "cellGap": 1,
         "showValue": "never"
-      }
-    },
-    {
-      "type": "row",
-      "title": "\ud83d\udcca Consumer Lag",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 92
-      },
-      "id": 304
-    },
-    {
-      "type": "gauge",
-      "title": "Consumer Lag (Sent \u2212 Acked)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "id": 305,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 93
-      },
-      "targets": [
-        {
-          "expr": "(anypoint_mq_queue_messages_sent{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} - anypoint_mq_queue_messages_acked{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}) > 0",
-          "legendFormat": "{{environment}} / {{queue_name}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 100
-              },
-              {
-                "color": "orange",
-                "value": 1000
-              },
-              {
-                "color": "red",
-                "value": 10000
-              }
-            ]
-          },
-          "min": 0
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      }
-    },
-    {
-      "type": "timeseries",
-      "title": "Consumer Lag Over Time (Sent \u2212 Acked)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "id": 306,
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 93
-      },
-      "targets": [
-        {
-          "expr": "anypoint_mq_queue_messages_sent{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} - anypoint_mq_queue_messages_acked{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}",
-          "legendFormat": "{{environment}} / {{queue_name}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "fillOpacity": 20,
-            "gradientMode": "scheme",
-            "lineWidth": 2,
-            "drawStyle": "line"
-          }
-        }
-      }
-    },
-    {
-      "type": "row",
-      "title": "\u23f1\ufe0f Queue Latency Estimation",
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 101
-      },
-      "id": 307
-    },
-    {
-      "type": "timeseries",
-      "title": "Estimated Queue Wait Time (depth \u00f7 consumption rate)",
-      "description": "Estimates how long a new message would wait in queue based on current depth and consumption rate. Higher = slower processing.",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "id": 308,
-      "gridPos": {
-        "h": 8,
-        "w": 16,
-        "x": 0,
-        "y": 102
-      },
-      "targets": [
-        {
-          "expr": "anypoint_mq_queue_messages_in_queue{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"} / (rate(anypoint_mq_queue_messages_received{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m]) > 0)",
-          "legendFormat": "{{environment}} / {{queue_name}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "fillOpacity": 10,
-            "lineWidth": 2,
-            "drawStyle": "line",
-            "spanNulls": true
-          },
-          "thresholds": {
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 60
-              },
-              {
-                "color": "red",
-                "value": 300
-              }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "type": "stat",
-      "title": "Avg Processing Rate (msgs/min)",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "id": 309,
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 102
-      },
-      "targets": [
-        {
-          "expr": "rate(anypoint_mq_queue_messages_acked{org=~\"$org\",environment=~\"$environment\",queue_name=~\"$queue\"}[10m]) * 60",
-          "legendFormat": "{{queue_name}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "msg/min",
-          "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              },
-              {
-                "color": "green",
-                "value": 10
-              }
-            ]
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "colorMode": "background",
-        "graphMode": "area"
       }
     },
     {
@@ -2435,65 +2084,6 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 500000
-              },
-              {
-                "color": "red",
-                "value": 1000000
-              }
-            ]
-          },
-          "unit": "short"
-        }
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 8,
-        "x": 16,
-        "y": 153
-      },
-      "id": 103,
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "orientation": "auto",
-        "showThresholdLabels": false,
-        "showThresholdMarkers": true
-      },
-      "title": "Messages Acked (30d)",
-      "type": "gauge",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(anypoint_mq_usage_messages_acked_total{org=~\"$org\", environment=~\"$environment\"})",
-          "legendFormat": "{{environment}}"
-        }
-      ]
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
             "mode": "palette-classic"
           },
           "unit": "short"
@@ -2530,14 +2120,6 @@
           },
           "expr": "anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"}",
           "legendFormat": "{{environment}} \u2014 Received"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "anypoint_mq_usage_messages_acked_total{org=~\"$org\", environment=~\"$environment\"}",
-          "legendFormat": "{{environment}} \u2014 Acked"
         }
       ]
     },
@@ -2592,14 +2174,6 @@
           },
           "expr": "sum(anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
           "legendFormat": "{{environment}} \u2014 Received"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum(anypoint_mq_usage_messages_acked_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
-          "legendFormat": "{{environment}} \u2014 Acked"
         }
       ]
     },

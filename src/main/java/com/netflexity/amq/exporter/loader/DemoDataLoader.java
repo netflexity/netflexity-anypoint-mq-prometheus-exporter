@@ -13,6 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import com.netflexity.amq.exporter.model.Exchange;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
@@ -218,10 +220,14 @@ public class DemoDataLoader {
                 try {
                     // Step 1: Load and track per-queue publish counts
                     List<QueuePublishRecord> publishRecords = Collections.synchronizedList(new ArrayList<>());
+                    AtomicInteger exchangePublished = new AtomicInteger(0);
+                    AtomicInteger exchangeCount = new AtomicInteger(0);
                     
                     Flux.fromIterable(anypointConfig.getEnvironments())
                             .flatMap(env -> Flux.fromIterable(anypointConfig.getRegions())
-                                    .flatMap(region -> listQueues(env.getId(), region)
+                                    .flatMap(region -> {
+                                        // Publish to queues
+                                        Flux<Integer> queueFlux = listQueues(env.getId(), region)
                                             .filter(queue -> matchesPrefix(queue.getQueueId(), queuePrefix))
                                             .concatMap(queue -> {
                                                 int count = ThreadLocalRandom.current().nextInt(minMessages, maxMessages + 1);
@@ -234,11 +240,30 @@ public class DemoDataLoader {
                                                             }
                                                         })
                                                         .delayElement(Duration.ofMillis(500));
-                                            })))
+                                            });
+                                        
+                                        // Publish to exchanges (fewer messages — they fan out)
+                                        Flux<Integer> exchangeFlux = listExchanges(env.getId(), region)
+                                            .concatMap(exchange -> {
+                                                int exchangeMax = Math.max(maxMessages / 3, 1);
+                                                int count = ThreadLocalRandom.current().nextInt(minMessages, exchangeMax + 1);
+                                                return publishToExchange(env.getId(), region, exchange.getExchangeId(), count)
+                                                        .doOnSuccess(published -> {
+                                                            if (published > 0) {
+                                                                exchangePublished.addAndGet(published);
+                                                                exchangeCount.incrementAndGet();
+                                                            }
+                                                        })
+                                                        .delayElement(Duration.ofMillis(500));
+                                            });
+                                        
+                                        return queueFlux.thenMany(exchangeFlux);
+                                    }))
                             .then().block();
                     
-                    int totalPublished = publishRecords.stream().mapToInt(r -> r.count).sum();
-                    log.info("Published {} messages across {} queues", totalPublished, publishRecords.size());
+                    int totalPublished = publishRecords.stream().mapToInt(r -> r.count).sum() + exchangePublished.get();
+                    log.info("Published {} messages across {} queues and {} exchanges", 
+                            totalPublished, publishRecords.size(), exchangeCount.get());
 
                     // Step 2: Wait for messages to be visible
                     Thread.sleep(delaySeconds * 1000L);
@@ -401,7 +426,8 @@ public class DemoDataLoader {
     private Mono<Void> loadEnvironmentRegion(AnypointConfig.Environment env, String region,
                                               String queuePrefix, int minMessages, int maxMessages,
                                               LoadResult result) {
-        return listQueues(env.getId(), region)
+        // Publish to queues
+        Mono<Void> queueLoading = listQueues(env.getId(), region)
                 .filter(queue -> matchesPrefix(queue.getQueueId(), queuePrefix))
                 .index()
                 .concatMap(indexed -> {  // concatMap = sequential, one queue at a time (no flooding)
@@ -418,6 +444,27 @@ public class DemoDataLoader {
                             .delayElement(Duration.ofMillis(500));  // 500ms between queues
                 })
                 .then();
+
+        // Publish to exchanges — uses lower message counts (exchanges fan out to bound queues)
+        Mono<Void> exchangeLoading = listExchanges(env.getId(), region)
+                .index()
+                .concatMap(indexed -> {
+                    Exchange exchange = indexed.getT2();
+                    long index = indexed.getT1();
+                    // Exchanges get fewer messages since each fans out to multiple queues
+                    int exchangeMax = Math.max(maxMessages / 3, 1);
+                    int count = computeQueueMessageCount(index, exchange.getExchangeId(), minMessages, exchangeMax);
+                    return publishToExchange(env.getId(), region, exchange.getExchangeId(), count)
+                            .doOnSuccess(published -> {
+                                result.addPublished(published);
+                                result.addExchange(exchange.getExchangeId());
+                                log.debug("Published {} messages to exchange {}", published, exchange.getExchangeId());
+                            })
+                            .delayElement(Duration.ofMillis(500));
+                })
+                .then();
+
+        return queueLoading.then(exchangeLoading);
     }
 
     /**
@@ -491,6 +538,84 @@ public class DemoDataLoader {
                         .bodyToMono(new ParameterizedTypeReference<List<Queue>>() {})
                         .flatMapMany(Flux::fromIterable)
                         .filter(q -> "queue".equalsIgnoreCase(q.getType())));
+    }
+
+    private Flux<Exchange> listExchanges(String environmentId, String region) {
+        String url = String.format("%s/mq/admin/api/v1/organizations/%s/environments/%s/regions/%s/destinations",
+                anypointConfig.getBaseUrl(),
+                anypointConfig.getOrganizationId(),
+                environmentId,
+                region);
+
+        return authClient.getAccessToken()
+                .flatMapMany(token -> webClient.get()
+                        .uri(url)
+                        .header("Authorization", token.getAuthorizationHeader())
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<List<Exchange>>() {})
+                        .flatMapMany(Flux::fromIterable)
+                        .filter(e -> "exchange".equalsIgnoreCase(e.getType()))
+                        .doOnNext(e -> {
+                            e.setRegion(region);
+                            e.setEnvironment(environmentId);
+                        }));
+    }
+
+    /**
+     * Publish N messages to an exchange via the Anypoint MQ Broker API.
+     * Same endpoint pattern as queues — the exchange fans out to bound queues.
+     */
+    private Mono<Integer> publishToExchange(String environmentId, String region, String exchangeId, int count) {
+        AtomicInteger published = new AtomicInteger(0);
+
+        return authClient.getAccessToken()
+                .flatMap(token -> Flux.range(1, count)
+                        .buffer(10)  // AMQ batch limit
+                        .concatMap(batch -> {
+                            List<Map<String, Object>> messages = new ArrayList<>();
+                            for (int seq : batch) {
+                                Map<String, Object> headers = new LinkedHashMap<>();
+                                headers.put("messageId", UUID.randomUUID().toString());
+                                headers.put("ttl", 120000);
+
+                                Map<String, Object> properties = new LinkedHashMap<>();
+                                properties.put("loadSequence", String.valueOf(seq));
+                                properties.put("source", "demo-loader-exchange");
+
+                                Map<String, Object> msg = new LinkedHashMap<>();
+                                msg.put("headers", headers);
+                                msg.put("properties", properties);
+                                msg.put("body", String.format("{\"date\":\"%s\",\"sequence\":%d,\"exchange\":\"%s\"}", Instant.now(), seq, exchangeId));
+                                messages.add(msg);
+                            }
+
+                            String url = String.format(
+                                    "%s/api/v1/organizations/%s/environments/%s/destinations/%s/messages",
+                                    getBrokerUrl(region),
+                                    anypointConfig.getOrganizationId(),
+                                    environmentId,
+                                    exchangeId);
+
+                            return webClient.put()
+                                    .uri(url)
+                                    .header("Authorization", token.getAuthorizationHeader())
+                                    .header("X-ANYPNT-ORG-ID", anypointConfig.getOrganizationId())
+                                    .header("X-ANYPNT-ENV-ID", environmentId)
+                                    .bodyValue(messages)
+                                    .retrieve()
+                                    .onStatus(HttpStatusCode::isError, resp ->
+                                            resp.bodyToMono(String.class)
+                                                    .flatMap(body -> Mono.error(new RuntimeException(
+                                                            "Exchange publish failed: " + resp.statusCode() + " " + body))))
+                                    .bodyToMono(String.class)
+                                    .doOnSuccess(resp -> published.addAndGet(batch.size()))
+                                    .retryWhen(Retry.backoff(2, Duration.ofMillis(500)))
+                                    .onErrorResume(e -> {
+                                        log.warn("Failed to publish batch to exchange {}: {}", exchangeId, e.getMessage());
+                                        return Mono.empty();
+                                    });
+                        })
+                        .then(Mono.fromCallable(published::get)));
     }
 
     /**
@@ -704,7 +829,9 @@ public class DemoDataLoader {
         private final AtomicInteger totalMessagesPublished = new AtomicInteger(0);
         private final AtomicInteger totalMessagesConsumed = new AtomicInteger(0);
         private final AtomicInteger queuesTargeted = new AtomicInteger(0);
+        private final AtomicInteger exchangesTargeted = new AtomicInteger(0);
         private final List<String> queues = Collections.synchronizedList(new ArrayList<>());
+        private final List<String> exchanges = Collections.synchronizedList(new ArrayList<>());
 
         public void addPublished(int count) { totalMessagesPublished.addAndGet(count); }
         public void addConsumed(int count) { totalMessagesConsumed.addAndGet(count); }
@@ -714,9 +841,16 @@ public class DemoDataLoader {
                 queuesTargeted.incrementAndGet();
             }
         }
+        public void addExchange(String exchangeId) {
+            if (!exchanges.contains(exchangeId)) {
+                exchanges.add(exchangeId);
+                exchangesTargeted.incrementAndGet();
+            }
+        }
 
         public int getTotalMessagesPublished() { return totalMessagesPublished.get(); }
         public int getTotalMessagesConsumed() { return totalMessagesConsumed.get(); }
         public int getQueuesTargeted() { return queuesTargeted.get(); }
+        public int getExchangesTargeted() { return exchangesTargeted.get(); }
     }
 }
