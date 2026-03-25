@@ -331,7 +331,7 @@ public class AnypointMqClient {
         Map<String, Object> queryBody = new java.util.LinkedHashMap<>();
         queryBody.put("startDate", ISO_FORMATTER.format(startTime));
         queryBody.put("endDate", ISO_FORMATTER.format(endTime));
-        queryBody.put("platforms", List.of("mq"));
+        queryBody.put("platforms", List.of("Anypoint MQ"));
         queryBody.put("objectTypes", List.of());
         queryBody.put("actions", List.of());
         queryBody.put("objectIds", List.of());
