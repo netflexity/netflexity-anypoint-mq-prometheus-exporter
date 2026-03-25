@@ -282,9 +282,32 @@ public class MqMetricsCollector {
                     updateGaugeMetric("anypoint_mq_audit_updates",
                             updates, "org", orgName);
 
+                    // Per-destination audit metrics (which queue/exchange was changed)
+                    for (var entry : entries) {
+                        String destName = entry.getObjectName();
+                        if (destName == null && entry.getPayload() != null) {
+                            destName = entry.getPayload().getObjectName();
+                        }
+                        if (destName == null) destName = "unknown";
+                        String action = entry.getAction() != null ? entry.getAction().toLowerCase() : "unknown";
+                        String env = entry.getEnvironmentName() != null ? entry.getEnvironmentName() : "unknown";
+                        
+                        updateGaugeMetric("anypoint_mq_audit_event", 1L,
+                                "org", orgName,
+                                "destination", destName,
+                                "action", action,
+                                "environment", env);
+                    }
+
                     if (!entries.isEmpty()) {
                         log.info("MQ audit log: {} changes detected (creates={}, deletes={}, updates={}) in last {}m",
                                 entries.size(), creates, deletes, updates, lookbackMinutes);
+                        for (var entry : entries) {
+                            log.info("  {} {} in {} ({})", entry.getAction(), 
+                                    entry.getObjectName() != null ? entry.getObjectName() : 
+                                            (entry.getPayload() != null ? entry.getPayload().getObjectName() : "?"),
+                                    entry.getEnvironmentName(), entry.getObjectType());
+                        }
                     } else {
                         log.debug("No MQ audit log changes in last {}m", lookbackMinutes);
                     }
