@@ -341,8 +341,8 @@ public class AnypointMqClient {
         queryBody.put("offset", 0);
         queryBody.put("limit", 100);
 
-        log.info("Querying MQ audit logs ({}m lookback): startDate={}, endDate={}, platforms={}", 
-                lookbackMinutes, queryBody.get("startDate"), queryBody.get("endDate"), queryBody.get("platforms"));
+        log.debug("Querying MQ audit logs ({}m lookback): startDate={}, endDate={}", 
+                lookbackMinutes, queryBody.get("startDate"), queryBody.get("endDate"));
 
         return authClient.getAccessToken()
                 .flatMap(token -> webClient.post()
@@ -357,13 +357,7 @@ public class AnypointMqClient {
                 .timeout(Duration.ofSeconds(anypointConfig.getHttp().getReadTimeoutSeconds()))
                 .flatMapMany(response -> {
                     if (response == null || response.getData() == null) return Flux.empty();
-                    log.info("Found {} MQ audit log entries", response.getData().size());
-                    if (response.getData() != null) {
-                        for (var entry : response.getData()) {
-                            log.info("Audit entry: action={}, objectType={}, platform={}, objectName={}", 
-                                    entry.getAction(), entry.getObjectType(), entry.getPlatform(), entry.getObjectName());
-                        }
-                    }
+                    log.debug("Found {} MQ audit log entries", response.getData().size());
                     return Flux.fromIterable(response.getData());
                 })
                 .onErrorResume(error -> {
