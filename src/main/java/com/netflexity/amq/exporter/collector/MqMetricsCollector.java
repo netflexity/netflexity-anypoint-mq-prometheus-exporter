@@ -257,7 +257,7 @@ public class MqMetricsCollector {
      */
     private Mono<Void> collectAuditLogMetrics() {
         // Look back 2x the scrape interval to avoid missing events between scrapes
-        int lookbackMinutes = Math.max((anypointConfig.getScrape().getIntervalSeconds() * 2) / 60, 5);
+        int lookbackMinutes = Math.max((anypointConfig.getScrape().getIntervalSeconds() * 2) / 60, 30);
 
         return mqClient.queryMqAuditLogs(lookbackMinutes)
                 .collectList()
