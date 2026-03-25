@@ -1157,7 +1157,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "increase(anypoint_mq_scrape_errors_total[15m])",
+          "expr": "increase(anypoint_mq_scrape_errors[15m])",
           "legendFormat": "Scrape Errors"
         }
       ]
@@ -2012,7 +2012,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(anypoint_mq_usage_messages_sent_total{org=~\"$org\", environment=~\"$environment\"})",
+          "expr": "sum(anypoint_mq_queue_messages_sent{org=~\"$org\", environment=~\"$environment\"})",
           "legendFormat": "{{environment}}"
         }
       ]
@@ -2071,7 +2071,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"})",
+          "expr": "sum(anypoint_mq_queue_messages_received{org=~\"$org\", environment=~\"$environment\"})",
           "legendFormat": "{{environment}}"
         }
       ]
@@ -2110,7 +2110,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anypoint_mq_usage_messages_sent_total{org=~\"$org\", environment=~\"$environment\"}",
+          "expr": "anypoint_mq_queue_messages_sent{org=~\"$org\", environment=~\"$environment\"}",
           "legendFormat": "{{environment}} \u2014 Sent"
         },
         {
@@ -2118,7 +2118,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"}",
+          "expr": "anypoint_mq_queue_messages_received{org=~\"$org\", environment=~\"$environment\"}",
           "legendFormat": "{{environment}} \u2014 Received"
         }
       ]
@@ -2164,7 +2164,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(anypoint_mq_usage_messages_sent_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
+          "expr": "sum(anypoint_mq_queue_messages_sent{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
           "legendFormat": "{{environment}} \u2014 Sent"
         },
         {
@@ -2172,7 +2172,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(anypoint_mq_usage_messages_received_total{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
+          "expr": "sum(anypoint_mq_queue_messages_received{org=~\"$org\", environment=~\"$environment\"}) by (environment)",
           "legendFormat": "{{environment}} \u2014 Received"
         }
       ]
@@ -2241,7 +2241,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anypoint_mq_usage_billable_units_total{org=~\"$org\", environment=~\"$environment\"}",
+          "expr": "anypoint_mq_usage_billable_units{org=~\"$org\", environment=~\"$environment\"}",
           "legendFormat": "{{environment}}"
         }
       ]
@@ -2298,7 +2298,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anypoint_mq_usage_api_requests_total{org=~\"$org\", environment=~\"$environment\"}",
+          "expr": "anypoint_mq_usage_api_requests{org=~\"$org\", environment=~\"$environment\"}",
           "legendFormat": "{{environment}}"
         }
       ]
@@ -2355,7 +2355,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anypoint_mq_org_usage_billable_units_total{org=~\"$org\"}",
+          "expr": "anypoint_mq_org_usage_billable_units{org=~\"$org\"}",
           "legendFormat": "{{org}}"
         }
       ]
@@ -2553,7 +2553,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "anypoint_mq_audit_changes_total{org=~\"$org\"}",
+          "expr": "anypoint_mq_audit_changes{org=~\"$org\"}",
           "legendFormat": "Changes"
         }
       ]
